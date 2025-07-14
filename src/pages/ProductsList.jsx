@@ -17,11 +17,22 @@ const flashDeals = [
 ];
 
 // Dummy categories
-const categories = ["Beverages", "Snacks", "Spices", "Rice", "Personal Care"];
+//const categories = ["Beverages", "Snacks", "Spices", "Rice", "Personal Care"];
 
 function ProductsPage() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const [categories, setCategories] = useState([]);
+  const [Loading, setCatLoading] = useState(true);
+
+  useEffect(() => {
+    ApiCallWithoutDataNoAsync(
+      "/productCategories",
+      setCategories,
+      setCatLoading
+    );
+  }, []);
 
   useEffect(() => {
     ApiCallWithoutDataNoAsync("/products", setProducts, setLoading);
