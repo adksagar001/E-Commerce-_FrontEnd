@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { ApiCallWithoutDataNoAsync } from "../services/api";
-import vitamilk from "../../dist/assets/Vita_Milk_25gm.png";
-import twopm from "../../dist/assets/2pm.jpeg";
+import vitamilk from "../../src/img/Vita_Milk_25gm.png";
+import twopm from "../../src/img/2pm.jpeg";
 
 // Image mapping
 const imageMap = {
