@@ -6,10 +6,18 @@ const Navbar = ({ onSearch }) => {
   const [searchTerm, setSearchTerm] = useState("");
 
   const navItems = [
+    { name: "Home", path: "/" },
     { name: "Login", path: "/login" },
     { name: "SignUp", path: "/register" },
   ];
 
+  if (
+    location.pathname === "/login" ||
+    location.pathname === "/register" ||
+    location.pathname === "/forgot-password"
+  ) {
+    return null;
+  }
   const handleSearch = (e) => {
     const term = e.target.value;
     setSearchTerm(term);
@@ -32,11 +40,7 @@ const Navbar = ({ onSearch }) => {
                       href="../../../index.html"
                     >
                       <div className="d-flex align-items-center">
-                        <img
-                          src="../logos/favicon.png"
-                          alt="logo"
-                          width="27"
-                        />
+                        <img src="../logos/favicon.png" alt="logo" width="27" />
                         <h5 className="logo-text ms-2">BharatPokhari Stores</h5>
                       </div>
                     </a>
@@ -547,21 +551,18 @@ const Navbar = ({ onSearch }) => {
               </div>
             </div>
             <ul className="navbar-nav justify-content-end align-items-center">
-              <li className="nav-item">
-                <Link className="nav-link" to="/">
-                  Home
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link className="nav-link" to="/login">
-                  Login
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link className="nav-link" to="/register">
-                  Sign Up
-                </Link>
-              </li>
+            
+              {navItems.map(
+                (item, index) =>
+                  location.pathname !== "/login" &&
+                  location.pathname !== "/register" && (
+                    <li className="nav-item" key={index}>
+                      <Link className="nav-link" to={item.path}>
+                        {item.name}
+                      </Link>
+                    </li>
+                  )
+              )}
             </ul>
           </div>
         </nav>
@@ -716,7 +717,6 @@ const Navbar = ({ onSearch }) => {
           </button>
         </div>
       </main>
-      
     </>
   );
 };
