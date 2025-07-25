@@ -6,13 +6,15 @@ import Register from "./pages/Register";
 import Navbar from "./components/Navbar";
 import Mainbody from "./components/MainBody";
 import Footer from "./components/Footer";
+import ThemeToggler from "./utils/ThemeToggler";
+
 function App() {
   return (
     <Router>
+      <ThemeToggler />
       <Navbar />
-      <Mainbody />
       <Routes>
-        {/* <Route path="/" element={<ProductsList />} /> */}
+        <Route path="/" element={<Mainbody />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
       </Routes>

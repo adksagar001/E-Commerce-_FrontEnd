@@ -7,7 +7,7 @@ function Footer() {
             <div className="col-12 col-lg-4">
               <div className="d-flex align-items-center mb-3">
                 <img
-                  src="./public/logos/favicon.png"
+                  src="../logos/favicon.png"
                   alt="logo"
                   width="27"
                 />
@@ -122,6 +122,7 @@ function Footer() {
           </div>
         </div>
       </footer>
+      
     </>
   );
 }

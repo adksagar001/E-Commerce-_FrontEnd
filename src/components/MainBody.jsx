@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { ApiCallWithoutDataNoAsync } from "../services/api";
+import { Link } from "react-router-dom";
+import productDetail from "../components/Customer/ProductDetail";
 
 function Mainbody() {
   const [products, setProducts] = useState([]);
@@ -9,30 +11,28 @@ function Mainbody() {
   const [Loading, setCatLoading] = useState(true);
 
   useEffect(() => {
-    ApiCallWithoutDataNoAsync("categories/cats", setCategories, setCatLoading);
+    ApiCallWithoutDataNoAsync("/categories/cats", setCategories, setCatLoading);
   }, []);
 
-  useEffect(() => {
-    ApiCallWithoutDataNoAsync("products", setProducts, setLoading);
-  }, []);
+  // useEffect(() => {
+  //   ApiCallWithoutDataNoAsync("products", setProducts, setLoading);
+  // }, []);
 
   return (
     <div className="ecommerce-homepage pt-5 mb-9">
       <section className="py-0">
         <div className="container-small">
           <div className="scrollbar">
-                      <div className="d-flex justify-content-between">
-              {categories.map((CategoryName) => (
-                <a className="icon-nav-item" href="#!">
+            <div className="d-flex justify-content-between">
+              {categories.map((CategoryName, id) => (
+                <a className="icon-nav-item" href="#!" key={CategoryName.id}>
                   <div
                     className="icon-container mb-2 bg-warning-subtle"
                     data-bs-theme="light"
                   >
                     <span className="fs-4 uil uil-star text-warning"></span>
                   </div>
-                  <p className="nav-label">
-                    {CategoryName.CategoryName}
-                  </p>
+                  <p className="nav-label">{CategoryName.CategoryName}</p>
                 </a>
               ))}
             </div>
@@ -78,7 +78,7 @@ function Mainbody() {
                   className="btn btn-lg btn-primary rounded-pill banner-button"
                   href="#!"
                 >
-                  Shop Now
+                  Order Now
                 </a>
               </div>
             </div>
@@ -101,7 +101,7 @@ function Mainbody() {
                     className="btn btn-lg btn-primary rounded-pill banner-button"
                     href="#!"
                   >
-                    Buy Now
+                    Order Now
                   </a>
                 </div>
               </div>
@@ -130,7 +130,7 @@ function Mainbody() {
                         className="btn btn-lg btn-warning rounded-pill banner-button"
                         href="#!"
                       >
-                        Buy Now
+                        Order Now
                       </a>
                     </div>
                   </div>
@@ -193,14 +193,11 @@ function Mainbody() {
                                 alt=""
                               />
                             </div>
-                            <a
-                              className="stretched-link"
-                              href="../../../apps/e-commerce/landing/product-details.html"
-                            >
+                            <Link to="../components/Customer/ProductDetail">
                               <h6 className="mb-2 lh-sm line-clamp-3 product-name">
                                 PlayStation 5 DualSense Wireless Controller
                               </h6>
-                            </a>
+                            </Link>
                             <p className="fs-9">
                               <span className="fa fa-star text-warning"></span>
                               <span className="fa fa-star text-warning"></span>
