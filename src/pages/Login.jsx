@@ -19,13 +19,13 @@ const Login = () => {
           password,
         }
       );
-
+      debugger;
       // Save the JWT token (optional: save to localStorage)
       localStorage.setItem("orgToken", response.data.token);
 
       // Redirect or show success
       alert("Login Successful!");
-       window.location.href = "/admindashboard"; // or navigate programmatically
+      window.location.href = "/admindashboard"; // or navigate programmatically
     } catch (err) {
       setError(err.response?.data?.message || "Invalid email or password");
     }
@@ -43,16 +43,15 @@ const Login = () => {
         <div className="col-lg-6">
           <div className="row flex-center h-100 g-0 px-4 px-sm-0">
             <div className="col col-sm-6 col-lg-7 col-xl-6">
-              
-                <Link
-                  to="/"
-                  className="d-flex flex-center text-decoration-none mb-4"
-                >
-                  <div className="d-flex align-items-cent er fw-bolder fs-3 d-inline-block">
-                    <img src="../logos/favicon.png" alt="logo" width="200" />
-                  </div>
-                </Link>
-                
+              <Link
+                to="/"
+                className="d-flex flex-center text-decoration-none mb-4"
+              >
+                <div className="d-flex align-items-cent er fw-bolder fs-3 d-inline-block">
+                  <img src="../logos/favicon.png" alt="logo" width="200" />
+                </div>
+              </Link>
+
               <div className="text-center mb-7">
                 <h3 className="text-body-highlight"> 🛒BHARATPOKHARI STORES</h3>
                 <p className="text-body-tertiary">Access our Products</p>

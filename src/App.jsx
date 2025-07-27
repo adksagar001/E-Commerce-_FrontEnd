@@ -36,7 +36,7 @@ const AppWithFooter = () => {
 function App() {
   return (
     <Router>
-      <ThemeToggler />
+      {/* <ThemeToggler /> */}
       <Navbar />
       <Routes>
         <Route path="/" element={<Mainbody />} />

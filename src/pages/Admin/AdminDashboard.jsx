@@ -176,7 +176,7 @@ function AdminDashboard() {
                     <div className="pb-0 pt-4">
                       <div
                         className="echarts-new-customers"
-                        style={{ height: "180px", width: "100%;" }}
+                        style={{ height: "180px", width: "100%" }}
                       ></div>
                     </div>
                   </div>
@@ -194,7 +194,7 @@ function AdminDashboard() {
                     <div className="pb-4 pt-3">
                       <div
                         className="echart-top-coupons"
-                        style={{ height: "115px", width: "100%;" }}
+                        style={{ height: "115px", width: "100%" }}
                       ></div>
                     </div>
                     <div>
