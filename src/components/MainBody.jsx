@@ -250,7 +250,7 @@ function Mainbody() {
                               </button>
                               <img
                                 className="img-fluid"
-                                src="../../../assets/img/products/1.png"
+                                src="/assets/img/products/1.png"
                                 alt=""
                               />
                               <span className="badge text-bg-success fs-10 product-verified-badge">

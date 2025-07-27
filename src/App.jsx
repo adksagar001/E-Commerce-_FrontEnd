@@ -1,4 +1,6 @@
 import React from "react";
+import "@fortawesome/fontawesome-free/css/all.min.css";
+
 import {
   BrowserRouter as Router,
   Routes,
@@ -41,7 +43,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />{" "}
-        <Route path="/admindashboard" element={<AdminDashboard/>}/>
+        <Route path="/admindashboard" element={<AdminDashboard />} />
       </Routes>
       <AppWithFooter /> {/* Conditionally render Footer */}
     </Router>
