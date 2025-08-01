@@ -1,52 +1,129 @@
-function AdminProductsList() {
+import React, { useEffect, useState, useRef } from "react";
+import Swal from "sweetalert2";
+import List from "list.js";
+import twopm from "/src/img/2pm.jpeg";
+import "bootstrap/dist/js/bootstrap.bundle.min.js";
+import { ApiCallWithLocalStorageWithoutData } from "../../services/api";
+import { ApiPostWithLocalStorage } from "../../services/api";
+
+export default function AdminProductsList() {
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const listRef = useRef(null);
+  const listInstance = useRef(null);
+  //------------------------getAll the products--------------
+  async function fetchProductsWithJWT() {
+    await ApiCallWithLocalStorageWithoutData(
+      "products/getAllProducts",
+      setProducts
+    );
+  }
+
+  //------------------------getAll the Categories--------------
+  async function fetchCategoriesWithJWT() {
+    await ApiCallWithLocalStorageWithoutData("categories", setCategories);
+  }
+
+  //--------------call both the fetches-----------
+  useEffect(() => {
+    fetchProductsWithJWT();
+    fetchCategoriesWithJWT();
+  }, []);
+  //----------------------------the asc and desc sorting,pagination in table-------------
+   useEffect(() => {
+     const timer = setTimeout(() => {
+       const listContainer = listRef.current;
+       const tbody = listContainer?.querySelector("tbody.list");
+       const rows = tbody?.querySelectorAll("tr:not(.template)") || [];
+
+       // Clean up previous list instance
+       if (listInstance.current) {
+         listInstance.current.destroy();
+         listInstance.current = null;
+       }
+
+       // Only reinitialize if there are visible rows
+       if (listContainer && rows.length > 0) {
+         listInstance.current = new List(listContainer, {
+           valueNames: ["product", "price", "category", "vendor", "time"],
+           page: 10,
+           pagination: {
+             paginationClass: "pagination",
+             innerWindow: 2,
+             left: 1,
+             right: 1,
+           },
+         });
+
+         // Optional: Add sorting behavior
+         const headers = listContainer.querySelectorAll("th.sort[data-sort]");
+         headers.forEach((header) => {
+           let ascending = true;
+           header.onclick = () => {
+             const attr = header.getAttribute("data-sort");
+             listInstance.current.sort(attr, {
+               order: ascending ? "asc" : "desc",
+             });
+             ascending = !ascending;
+           };
+         });
+       }
+     }, 100); 
+
+     return () => clearTimeout(timer);
+   }, [products]);
+
+  //----------------------------Add Product-----------------
+  async function handleSubmitProduct() {
+    const form = document.forms["productForm"];
+    const payload = {
+      ProductName: form.ProductName.value,
+      CompanyName: form.CompanyName.value,
+      Description: form.Description.value,
+      Price: parseInt(form.Price.value),
+      Image: form.Image.value,
+      Category: parseInt(form.Category.value),
+    };
+    await ApiPostWithLocalStorage("products/InsertNewProduct", payload, () => {
+      Swal.fire("Success", "Product saved successfully", "success");
+      document.getElementById("productForm").reset();
+
+     const modalInstance = bootstrap.Modal.getInstance(modalElement);
+      if (modalInstance) {
+       
+        modalInstance.hide();
+        fetchProductsWithJWT();
+      } 
+    });
+  }
+
+  //---------------------Main functionality----------------------
   return (
     <div className="content">
       <nav className="mb-3" aria-label="breadcrumb">
         <ol className="breadcrumb mb-0">
           <li className="breadcrumb-item">
-            <a href="#!">Page 1</a>
+            <a href="#!">Products</a>
           </li>
-          <li className="breadcrumb-item">
-            <a href="#!">Page 2</a>
-          </li>
-          <li className="breadcrumb-item active">Default</li>
+
+          <li className="breadcrumb-item active">List of Products</li>
         </ol>
       </nav>
       <div className="mb-9">
-        <div className="row g-3 mb-4">
-          <div className="col-auto">
-            <h2 className="mb-0">Products</h2>
-          </div>
-        </div>
         <ul className="nav nav-links mb-3 mb-lg-2 mx-n3">
           <li className="nav-item">
             <a className="nav-link active" aria-current="page" href="#">
               <span>All </span>
-              <span className="text-body-tertiary fw-semibold">(68817)</span>
-            </a>
-          </li>
-          <li className="nav-item">
-            <a className="nav-link" href="#">
-              <span>Published </span>
-              <span className="text-body-tertiary fw-semibold">(70348)</span>
-            </a>
-          </li>
-          <li className="nav-item">
-            <a className="nav-link" href="#">
-              <span>Drafts </span>
-              <span className="text-body-tertiary fw-semibold">(17)</span>
-            </a>
-          </li>
-          <li className="nav-item">
-            <a className="nav-link" href="#">
-              <span>On discount </span>
-              <span className="text-body-tertiary fw-semibold">(810)</span>
+              <span className="text-body-tertiary fw-semibold">
+                ({products.length})
+              </span>
             </a>
           </li>
         </ul>
         <div
           id="products"
-          data-list='{"valueNames":["product","price","category","tags","vendor","time"],"page":10,"pagination":true}'
+          ref={listRef}
+          data-list='{"valueNames":["product","price","category","vendor","time"],"page":50,"pagination":true}'
         >
           <div className="mb-4">
             <div className="d-flex flex-wrap gap-3">
@@ -76,72 +153,51 @@ function AdminProductsList() {
                       Category<span className="fas fa-angle-down ms-2"></span>
                     </button>
                     <ul className="dropdown-menu">
-                      <li>
-                        <a className="dropdown-item" href="#">
-                          Action
-                        </a>
-                      </li>
-                      <li>
-                        <a className="dropdown-item" href="#">
-                          Another action
-                        </a>
-                      </li>
-                      <li>
-                        <a className="dropdown-item" href="#">
-                          Something else here
-                        </a>
-                      </li>
-                      <li>
-                        <hr className="dropdown-divider" />
-                      </li>
-                      <li>
-                        <a className="dropdown-item" href="#">
-                          Separated link
-                        </a>
-                      </li>
+                      {categories.map((category) => (
+                        <li key={category.id}>
+                          <a
+                            className="dropdown-item"
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              const filtered = products.filter(
+                                (p) =>
+                                  p.Category === category.id ||
+                                  p.Category === parseInt(category.id)
+                              );
+                              setProducts(filtered);
+                            }}
+                          >
+                            {category.CategoryName}
+                          </a>
+                        </li>
+                      ))}
                     </ul>
                   </div>
                   <div className="btn-group position-static text-nowrap">
                     <button
                       className="btn btn-sm btn-phoenix-secondary px-7 flex-shrink-0"
                       type="button"
-                      data-bs-toggle="dropdown"
-                      data-boundary="window"
-                      aria-haspopup="true"
-                      aria-expanded="false"
-                      data-bs-reference="parent"
+                      onClick={() => {
+                        const filtered = products.filter((p) => p.price < 1000);
+                        setProducts(filtered);
+                      }}
                     >
-                      Vendor<span className="fas fa-angle-down ms-2"></span>
+                      Price &lt; 1000
                     </button>
-                    <ul className="dropdown-menu">
-                      <li>
-                        <a className="dropdown-item" href="#">
-                          Action
-                        </a>
-                      </li>
-                      <li>
-                        <a className="dropdown-item" href="#">
-                          Another action
-                        </a>
-                      </li>
-                      <li>
-                        <a className="dropdown-item" href="#">
-                          Something else here
-                        </a>
-                      </li>
-                      <li>
-                        <hr className="dropdown-divider" />
-                      </li>
-                      <li>
-                        <a className="dropdown-item" href="#">
-                          Separated link
-                        </a>
-                      </li>
-                    </ul>
+                    <button
+                      className="btn btn-sm btn-phoenix-secondary px-7 flex-shrink-0"
+                      type="button"
+                      onClick={() => {
+                        const filtered = products.filter(
+                          (p) => p.price >= 1000
+                        );
+                        setProducts(filtered);
+                      }}
+                    >
+                      Price ≥ 1000
+                    </button>
                   </div>
-                  <button className="btn btn-sm btn-phoenix-secondary px-7 flex-shrink-0">
-                    More filters
-                  </button>
                 </div>
               </div>
               <div className="ms-xxl-auto">
@@ -149,7 +205,12 @@ function AdminProductsList() {
                   <span className="fa-solid fa-file-export fs-9 me-2"></span>
                   Export
                 </button>
-                <button className="btn btn-primary" id="addBtn">
+                <button
+                  className="btn btn-primary"
+                  id="addBtn"
+                  data-bs-toggle="modal"
+                  data-bs-target="#productModal"
+                >
                   <span className="fas fa-plus me-2"></span>Add product
                 </button>
               </div>
@@ -181,18 +242,20 @@ function AdminProductsList() {
                     <th
                       className="sort white-space-nowrap align-middle ps-4"
                       scope="col"
-                      style={{ width: "350px" }}
+                      style={{ width: "350px", cursor: "pointer" }}
                       data-sort="product"
+                      role="button"
                     >
                       PRODUCT NAME
                     </th>
+
                     <th
                       className="sort align-middle text-end ps-4"
                       scope="col"
                       data-sort="price"
                       style={{ width: "150px" }}
                     >
-                      PRICE
+                      PRICE (Nrs.)
                     </th>
                     <th
                       className="sort align-middle ps-4"
@@ -202,26 +265,14 @@ function AdminProductsList() {
                     >
                       CATEGORY
                     </th>
-                    <th
-                      className="sort align-middle ps-3"
-                      scope="col"
-                      data-sort="tags"
-                      style={{ width: "250px" }}
-                    >
-                      TAGS
-                    </th>
-                    <th
-                      className="sort align-middle fs-8 text-center ps-4"
-                      scope="col"
-                      style={{ width: "125px" }}
-                    ></th>
+
                     <th
                       className="sort align-middle ps-4"
                       scope="col"
                       data-sort="vendor"
                       style={{ width: "200px" }}
                     >
-                      VENDOR
+                      COMPANY
                     </th>
                     <th
                       className="sort align-middle ps-4"
@@ -232,1624 +283,102 @@ function AdminProductsList() {
                       PUBLISHED ON
                     </th>
                     <th
-                      className="sort text-end align-middle pe-0 ps-4"
+                      className="sort align-middle ps-4"
                       scope="col"
+                      style={{ width: "50px" }}
                     ></th>
                   </tr>
                 </thead>
                 <tbody className="list" id="products-table-body">
-                  <tr className="position-static">
-                    <td className="fs-9 align-middle">
-                      <div className="form-check mb-0 fs-8">
-                        <input
-                          className="form-check-input"
-                          type="checkbox"
-                          data-bulk-select-row='{"product":"Fitbit Sense Advanced Smartwatch with Tools for Heart Health, Stress Management & Skin Temperature Trends, Carbon/Graphite, One Size (S & L Bands...","productImage":"/products/1.png","price":"$39","category":"Plants","tags":["Health","Exercise","Discipline","Lifestyle","Fitness"],"star":false,"vendor":"Blue Olive Plant sellers. Inc","publishedOn":"Nov 12, 10:45 PM"}'
-                        />
-                      </div>
-                    </td>
-                    <td className="align-middle white-space-nowrap py-0">
-                      <a
-                        className="d-block border border-translucent rounded-2"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        <img
-                          src="../../../assets/img//products/1.png"
-                          alt=""
-                          width="53"
-                        />
-                      </a>
-                    </td>
-                    <td className="product align-middle ps-4">
-                      <a
-                        className="fw-semibold line-clamp-3 mb-0"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        Fitbit Sense Advanced Smartwatch with Tools for Heart
-                        Health, Stress Management &amp; Skin Temperature Trends,
-                        Carbon/Graphite, One Size (S &amp; ...
-                      </a>
-                    </td>
-                    <td className="price align-middle white-space-nowrap text-end fw-bold text-body-tertiary ps-4">
-                      $39
-                    </td>
-                    <td className="category align-middle white-space-nowrap text-body-quaternary fs-9 ps-4 fw-semibold">
-                      Plants
-                    </td>
-                    <td
-                                          className="tags align-middle review pb-2 ps-3"
-                                          style={{ minWidth: "225px" }}
-                    >
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Health</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Exercise</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">
-                          Discipline
-                        </span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Lifestyle</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Fitness</span>
-                      </a>
-                    </td>
-                    <td className="align-middle review fs-8 text-center ps-4">
-                      <div className="d-toggle-container">
-                        <div className="d-block-hover">
-                          <span className="fas fa-star text-warning"></span>
+                  {products.map((product, index = 0) => (
+                    <tr key={product.id} className="position-static">
+                      <td className="fs-9 align-middle">
+                        <div className="form-check mb-0 fs-8">
+                          {index + 1}
+                          <input className="form-check-input" type="checkbox" />
                         </div>
-                        <div className="d-none-hover">
-                          <span className="far fa-star text-warning"></span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="vendor align-middle text-start fw-semibold ps-4">
-                      <a href="#!">Blue Olive Plant sellers. Inc</a>
-                    </td>
-                    <td className="time align-middle white-space-nowrap text-body-tertiary text-opacity-85 ps-4">
-                      Nov 12, 10:45 PM
-                    </td>
-                    <td className="align-middle white-space-nowrap text-end pe-0 ps-4 btn-reveal-trigger">
-                      <div className="btn-reveal-trigger position-static">
-                        <button
-                          className="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10"
-                          type="button"
-                          data-bs-toggle="dropdown"
-                          data-boundary="window"
-                          aria-haspopup="true"
-                          aria-expanded="false"
-                          data-bs-reference="parent"
+                      </td>
+
+                      <td
+                        className="align-middle white-space-nowrap py-0"
+                        data-sort={product.image}
+                      >
+                        <a
+                          className="d-block border border-translucent rounded-2"
+                          href="#!"
                         >
-                          <span className="fas fa-ellipsis-h fs-10"></span>
-                        </button>
-                        <div className="dropdown-menu dropdown-menu-end py-2">
-                          <a className="dropdown-item" href="#!">
-                            View
-                          </a>
-                          <a className="dropdown-item" href="#!">
-                            Export
-                          </a>
-                          <div className="dropdown-divider"></div>
-                          <a className="dropdown-item text-danger" href="#!">
-                            Remove
-                          </a>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr className="position-static">
-                    <td className="fs-9 align-middle">
-                      <div className="form-check mb-0 fs-8">
-                        <input
-                          className="form-check-input"
-                          type="checkbox"
-                          data-bulk-select-row='{"product":"iPhone 13 pro max-Pacific Blue-128GB storage","productImage":"/products/2.png","price":"$87","category":"Furniture","tags":["Class","Camera","Discipline","invincible","Pro","Swag"],"star":true,"vendor":"Beatrice Furnitures","publishedOn":"Nov 11, 7:36 PM"}'
-                        />
-                      </div>
-                    </td>
-                    <td className="align-middle white-space-nowrap py-0">
-                      <a
-                        className="d-block border border-translucent rounded-2"
-                        href="../../../apps/e-commerce/landing/product-details.html"
+                          <img
+                            src={
+                              product.image?.startsWith("http")
+                                ? product.image
+                                : twopm
+                            }
+                            alt=""
+                            width="53"
+                          />
+                        </a>
+                      </td>
+
+                      <td
+                        className="product align-middle ps-4"
+                        data-sort={product.productname}
                       >
-                        <img
-                          src="../../../assets/img//products/2.png"
-                          alt=""
-                          width="53"
-                        />
-                      </a>
-                    </td>
-                    <td className="product align-middle ps-4">
-                      <a
-                        className="fw-semibold line-clamp-3 mb-0"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        iPhone 13 pro max-Pacific Blue-128GB storage
-                      </a>
-                    </td>
-                    <td className="price align-middle white-space-nowrap text-end fw-bold text-body-tertiary ps-4">
-                      $87
-                    </td>
-                    <td className="category align-middle white-space-nowrap text-body-quaternary fs-9 ps-4 fw-semibold">
-                      Furniture
-                    </td>
-                    <td
-                                          className="tags align-middle review pb-2 ps-3"
-                                          style={{ minWidth: "225px" }}
-                    >
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Class</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Camera</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">
-                          Discipline
-                        </span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">
-                          invincible
-                        </span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Pro</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Swag</span>
-                      </a>
-                    </td>
-                    <td className="align-middle review fs-8 text-center ps-4">
-                      <span className="fas fa-star text-warning"></span>
-                    </td>
-                    <td className="vendor align-middle text-start fw-semibold ps-4">
-                      <a href="#!">Beatrice Furnitures</a>
-                    </td>
-                    <td className="time align-middle white-space-nowrap text-body-tertiary text-opacity-85 ps-4">
-                      Nov 11, 7:36 PM
-                    </td>
-                    <td className="align-middle white-space-nowrap text-end pe-0 ps-4 btn-reveal-trigger">
-                      <div className="btn-reveal-trigger position-static">
-                        <button
-                          className="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10"
-                          type="button"
-                          data-bs-toggle="dropdown"
-                          data-boundary="window"
-                          aria-haspopup="true"
-                          aria-expanded="false"
-                          data-bs-reference="parent"
-                        >
-                          <span className="fas fa-ellipsis-h fs-10"></span>
-                        </button>
-                        <div className="dropdown-menu dropdown-menu-end py-2">
-                          <a className="dropdown-item" href="#!">
-                            View
-                          </a>
-                          <a className="dropdown-item" href="#!">
-                            Export
-                          </a>
-                          <div className="dropdown-divider"></div>
-                          <a className="dropdown-item text-danger" href="#!">
-                            Remove
-                          </a>
+                        <a className="fw-semibold line-clamp-3 mb-0" href="#!">
+                          {product.productname}
+                        </a>
+                      </td>
+
+                      <td className="price align-middle white-space-nowrap text-end fw-bold text-body-tertiary ps-4">
+                        {product.price}
+                      </td>
+
+                      <td className="category align-middle white-space-nowrap text-body-quaternary fs-9 ps-4 fw-semibold">
+                        {product.CategoryName || "Uncategorized"}
+                      </td>
+
+                      <td className="vendor align-middle text-start fw-semibold ps-4">
+                        <a href="#!">{product.companyname}</a>
+                      </td>
+
+                      <td className="time align-middle white-space-nowrap text-body-tertiary text-opacity-85 ps-4">
+                        {product.CreatedAt}
+                      </td>
+
+                      <td className="align-middle white-space-nowrap text-end pe-0 ps-4 btn-reveal-trigger">
+                        <div className="btn-reveal-trigger position-static">
+                          <button
+                            className="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10"
+                            type="button"
+                            data-bs-toggle="dropdown"
+                            data-boundary="window"
+                            aria-haspopup="true"
+                            aria-expanded="false"
+                            data-bs-reference="parent"
+                          >
+                            <span className="fas fa-ellipsis-h fs-10"></span>
+                          </button>
+                          <div className="dropdown-menu dropdown-menu-end py-2">
+                            <a className="dropdown-item" href="#!">
+                              View
+                            </a>
+                            <a className="dropdown-item" href="#!">
+                              Export
+                            </a>
+                            <div className="dropdown-divider"></div>
+                            <a className="dropdown-item text-danger" href="#!">
+                              Remove
+                            </a>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr className="position-static">
-                    <td className="fs-9 align-middle">
-                      <div className="form-check mb-0 fs-8">
-                        <input
-                          className="form-check-input"
-                          type="checkbox"
-                          data-bulk-select-row='{"product":"Apple MacBook Pro 13 inch-M1-8/256GB-space","productImage":"/products/3.png","price":"$9","category":"Plants","tags":["Efficiency","Handy","Apple","Creativity","Gray"],"star":false,"vendor":"PlantPlanet","publishedOn":"Nov 11, 8:16 AM"}'
-                        />
-                      </div>
-                    </td>
-                    <td className="align-middle white-space-nowrap py-0">
-                      <a
-                        className="d-block border border-translucent rounded-2"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        <img
-                          src="../../../assets/img//products/3.png"
-                          alt=""
-                          width="53"
-                        />
-                      </a>
-                    </td>
-                    <td className="product align-middle ps-4">
-                      <a
-                        className="fw-semibold line-clamp-3 mb-0"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        Apple MacBook Pro 13 inch-M1-8/256GB-space
-                      </a>
-                    </td>
-                    <td className="price align-middle white-space-nowrap text-end fw-bold text-body-tertiary ps-4">
-                      $9
-                    </td>
-                    <td className="category align-middle white-space-nowrap text-body-quaternary fs-9 ps-4 fw-semibold">
-                      Plants
-                    </td>
-                    <td
-                      className="tags align-middle review pb-2 ps-3"
-                      style={{minWidth:"225px"}}
-                    >
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">
-                          Efficiency
-                        </span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Handy</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Apple</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">
-                          Creativity
-                        </span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Gray</span>
-                      </a>
-                    </td>
-                    <td className="align-middle review fs-8 text-center ps-4">
-                      <div className="d-toggle-container">
-                        <div className="d-block-hover">
-                          <span className="fas fa-star text-warning"></span>
-                        </div>
-                        <div className="d-none-hover">
-                          <span className="far fa-star text-warning"></span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="vendor align-middle text-start fw-semibold ps-4">
-                      <a href="#!">PlantPlanet</a>
-                    </td>
-                    <td className="time align-middle white-space-nowrap text-body-tertiary text-opacity-85 ps-4">
-                      Nov 11, 8:16 AM
-                    </td>
-                    <td className="align-middle white-space-nowrap text-end pe-0 ps-4 btn-reveal-trigger">
-                      <div className="btn-reveal-trigger position-static">
-                        <button
-                          className="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10"
-                          type="button"
-                          data-bs-toggle="dropdown"
-                          data-boundary="window"
-                          aria-haspopup="true"
-                          aria-expanded="false"
-                          data-bs-reference="parent"
-                        >
-                          <span className="fas fa-ellipsis-h fs-10"></span>
-                        </button>
-                        <div className="dropdown-menu dropdown-menu-end py-2">
-                          <a className="dropdown-item" href="#!">
-                            View
-                          </a>
-                          <a className="dropdown-item" href="#!">
-                            Export
-                          </a>
-                          <div className="dropdown-divider"></div>
-                          <a className="dropdown-item text-danger" href="#!">
-                            Remove
-                          </a>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr className="position-static">
-                    <td className="fs-9 align-middle">
-                      <div className="form-check mb-0 fs-8">
-                        <input
-                          className="form-check-input"
-                          type="checkbox"
-                          data-bulk-select-row='{"product":"Apple iMac 24\" 4K Retina Display M1 8 Core CPU...","productImage":"/products/4.png","price":"$8 - $58","category":"Toys","tags":["Color","Stunning","Retina","Green","PC killer"],"star":false,"vendor":"Kizzstore","publishedOn":"Nov 8, 6:39 PM"}'
-                        />
-                      </div>
-                    </td>
-                    <td className="align-middle white-space-nowrap py-0">
-                      <a
-                        className="d-block border border-translucent rounded-2"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        <img
-                          src="../../../assets/img//products/4.png"
-                          alt=""
-                          width="53"
-                        />
-                      </a>
-                    </td>
-                    <td className="product align-middle ps-4">
-                      <a
-                        className="fw-semibold line-clamp-3 mb-0"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        Apple iMac 24&quot; 4K Retina Display M1 8 Core CPU...
-                      </a>
-                    </td>
-                    <td className="price align-middle white-space-nowrap text-end fw-bold text-body-tertiary ps-4">
-                      $8 - $58
-                    </td>
-                    <td className="category align-middle white-space-nowrap text-body-quaternary fs-9 ps-4 fw-semibold">
-                      Toys
-                    </td>
-                    <td
-                      className="tags align-middle review pb-2 ps-3"
-                      style={{minWidth:"225px"}}
-                    >
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Color</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Stunning</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Retina</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Green</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">PC killer</span>
-                      </a>
-                    </td>
-                    <td className="align-middle review fs-8 text-center ps-4">
-                      <div className="d-toggle-container">
-                        <div className="d-block-hover">
-                          <span className="fas fa-star text-warning"></span>
-                        </div>
-                        <div className="d-none-hover">
-                          <span className="far fa-star text-warning"></span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="vendor align-middle text-start fw-semibold ps-4">
-                      <a href="#!">Kizzstore</a>
-                    </td>
-                    <td className="time align-middle white-space-nowrap text-body-tertiary text-opacity-85 ps-4">
-                      Nov 8, 6:39 PM
-                    </td>
-                    <td className="align-middle white-space-nowrap text-end pe-0 ps-4 btn-reveal-trigger">
-                      <div className="btn-reveal-trigger position-static">
-                        <button
-                          className="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10"
-                          type="button"
-                          data-bs-toggle="dropdown"
-                          data-boundary="window"
-                          aria-haspopup="true"
-                          aria-expanded="false"
-                          data-bs-reference="parent"
-                        >
-                          <span className="fas fa-ellipsis-h fs-10"></span>
-                        </button>
-                        <div className="dropdown-menu dropdown-menu-end py-2">
-                          <a className="dropdown-item" href="#!">
-                            View
-                          </a>
-                          <a className="dropdown-item" href="#!">
-                            Export
-                          </a>
-                          <div className="dropdown-divider"></div>
-                          <a className="dropdown-item text-danger" href="#!">
-                            Remove
-                          </a>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr className="position-static">
-                    <td className="fs-9 align-middle">
-                      <div className="form-check mb-0 fs-8">
-                        <input
-                          className="form-check-input"
-                          type="checkbox"
-                          data-bulk-select-row='{"product":"Razer Kraken v3 x Wired 7.1 Surroung Sound Gaming headset","productImage":"/products/5.png","price":"$120","category":"Fashion","tags":["Music","Audio","Meeting","Record","Sound"],"star":false,"vendor":"Inertia Fashion","publishedOn":"Nov 8, 5:32 PM"}'
-                        />
-                      </div>
-                    </td>
-                    <td className="align-middle white-space-nowrap py-0">
-                      <a
-                        className="d-block border border-translucent rounded-2"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        <img
-                          src="../../../assets/img//products/5.png"
-                          alt=""
-                          width="53"
-                        />
-                      </a>
-                    </td>
-                    <td className="product align-middle ps-4">
-                      <a
-                        className="fw-semibold line-clamp-3 mb-0"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        Razer Kraken v3 x Wired 7.1 Surroung Sound Gaming
-                        headset
-                      </a>
-                    </td>
-                    <td className="price align-middle white-space-nowrap text-end fw-bold text-body-tertiary ps-4">
-                      $120
-                    </td>
-                    <td className="category align-middle white-space-nowrap text-body-quaternary fs-9 ps-4 fw-semibold">
-                      Fashion
-                    </td>
-                    <td
-                      className="tags align-middle review pb-2 ps-3"
-                      style={{minWidth:"225px"}}
-                    >
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Music</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Audio</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Meeting</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Record</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Sound</span>
-                      </a>
-                    </td>
-                    <td className="align-middle review fs-8 text-center ps-4">
-                      <div className="d-toggle-container">
-                        <div className="d-block-hover">
-                          <span className="fas fa-star text-warning"></span>
-                        </div>
-                        <div className="d-none-hover">
-                          <span className="far fa-star text-warning"></span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="vendor align-middle text-start fw-semibold ps-4">
-                      <a href="#!">Inertia Fashion</a>
-                    </td>
-                    <td className="time align-middle white-space-nowrap text-body-tertiary text-opacity-85 ps-4">
-                      Nov 8, 5:32 PM
-                    </td>
-                    <td className="align-middle white-space-nowrap text-end pe-0 ps-4 btn-reveal-trigger">
-                      <div className="btn-reveal-trigger position-static">
-                        <button
-                          className="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10"
-                          type="button"
-                          data-bs-toggle="dropdown"
-                          data-boundary="window"
-                          aria-haspopup="true"
-                          aria-expanded="false"
-                          data-bs-reference="parent"
-                        >
-                          <span className="fas fa-ellipsis-h fs-10"></span>
-                        </button>
-                        <div className="dropdown-menu dropdown-menu-end py-2">
-                          <a className="dropdown-item" href="#!">
-                            View
-                          </a>
-                          <a className="dropdown-item" href="#!">
-                            Export
-                          </a>
-                          <div className="dropdown-divider"></div>
-                          <a className="dropdown-item text-danger" href="#!">
-                            Remove
-                          </a>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr className="position-static">
-                    <td className="fs-9 align-middle">
-                      <div className="form-check mb-0 fs-8">
-                        <input
-                          className="form-check-input"
-                          type="checkbox"
-                          data-bulk-select-row='{"product":"PlayStation 5 DualSense Wireless Controller","productImage":"/products/6.png","price":"$239","category":"Gadgets","tags":["Game","Control","Nav","Playstation","Wireless"],"star":false,"vendor":"FutureTech Inc","publishedOn":"Nov 6, 11:34 PM"}'
-                        />
-                      </div>
-                    </td>
-                    <td className="align-middle white-space-nowrap py-0">
-                      <a
-                        className="d-block border border-translucent rounded-2"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        <img
-                          src="../../../assets/img//products/6.png"
-                          alt=""
-                          width="53"
-                        />
-                      </a>
-                    </td>
-                    <td className="product align-middle ps-4">
-                      <a
-                        className="fw-semibold line-clamp-3 mb-0"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        PlayStation 5 DualSense Wireless Controller
-                      </a>
-                    </td>
-                    <td className="price align-middle white-space-nowrap text-end fw-bold text-body-tertiary ps-4">
-                      $239
-                    </td>
-                    <td className="category align-middle white-space-nowrap text-body-quaternary fs-9 ps-4 fw-semibold">
-                      Gadgets
-                    </td>
-                    <td
-                      className="tags align-middle review pb-2 ps-3"
-                      style={{minWidth:"225px"}}
-                    >
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Game</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Control</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Nav</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">
-                          Playstation
-                        </span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Wireless</span>
-                      </a>
-                    </td>
-                    <td className="align-middle review fs-8 text-center ps-4">
-                      <div className="d-toggle-container">
-                        <div className="d-block-hover">
-                          <span className="fas fa-star text-warning"></span>
-                        </div>
-                        <div className="d-none-hover">
-                          <span className="far fa-star text-warning"></span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="vendor align-middle text-start fw-semibold ps-4">
-                      <a href="#!">FutureTech Inc</a>
-                    </td>
-                    <td className="time align-middle white-space-nowrap text-body-tertiary text-opacity-85 ps-4">
-                      Nov 6, 11:34 PM
-                    </td>
-                    <td className="align-middle white-space-nowrap text-end pe-0 ps-4 btn-reveal-trigger">
-                      <div className="btn-reveal-trigger position-static">
-                        <button
-                          className="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10"
-                          type="button"
-                          data-bs-toggle="dropdown"
-                          data-boundary="window"
-                          aria-haspopup="true"
-                          aria-expanded="false"
-                          data-bs-reference="parent"
-                        >
-                          <span className="fas fa-ellipsis-h fs-10"></span>
-                        </button>
-                        <div className="dropdown-menu dropdown-menu-end py-2">
-                          <a className="dropdown-item" href="#!">
-                            View
-                          </a>
-                          <a className="dropdown-item" href="#!">
-                            Export
-                          </a>
-                          <div className="dropdown-divider"></div>
-                          <a className="dropdown-item text-danger" href="#!">
-                            Remove
-                          </a>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr className="position-static">
-                    <td className="fs-9 align-middle">
-                      <div className="form-check mb-0 fs-8">
-                        <input
-                          className="form-check-input"
-                          type="checkbox"
-                          data-bulk-select-row='{"product":"2021 Apple 12.9-inch iPad Pro (Wi‑Fi, 128GB) - Space Gray","productImage":"/products/7.png","price":"$4","category":"Food","tags":["Ipad","Pro","Creativity","Thunderbolt","Space"],"star":false,"vendor":"Maimuna’s Bakery","publishedOn":"Nov 1, 7:45 AM"}'
-                        />
-                      </div>
-                    </td>
-                    <td className="align-middle white-space-nowrap py-0">
-                      <a
-                        className="d-block border border-translucent rounded-2"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        <img
-                          src="../../../assets/img//products/7.png"
-                          alt=""
-                          width="53"
-                        />
-                      </a>
-                    </td>
-                    <td className="product align-middle ps-4">
-                      <a
-                        className="fw-semibold line-clamp-3 mb-0"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        2021 Apple 12.9-inch iPad Pro (Wi‑Fi, 128GB) - Space
-                        Gray
-                      </a>
-                    </td>
-                    <td className="price align-middle white-space-nowrap text-end fw-bold text-body-tertiary ps-4">
-                      $4
-                    </td>
-                    <td className="category align-middle white-space-nowrap text-body-quaternary fs-9 ps-4 fw-semibold">
-                      Food
-                    </td>
-                    <td
-                      className="tags align-middle review pb-2 ps-3"
-                      style={{minWidth:"225px"}}
-                    >
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Ipad</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Pro</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">
-                          Creativity
-                        </span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">
-                          Thunderbolt
-                        </span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Space</span>
-                      </a>
-                    </td>
-                    <td className="align-middle review fs-8 text-center ps-4">
-                      <div className="d-toggle-container">
-                        <div className="d-block-hover">
-                          <span className="fas fa-star text-warning"></span>
-                        </div>
-                        <div className="d-none-hover">
-                          <span className="far fa-star text-warning"></span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="vendor align-middle text-start fw-semibold ps-4">
-                      <a href="#!">Maimuna’s Bakery</a>
-                    </td>
-                    <td className="time align-middle white-space-nowrap text-body-tertiary text-opacity-85 ps-4">
-                      Nov 1, 7:45 AM
-                    </td>
-                    <td className="align-middle white-space-nowrap text-end pe-0 ps-4 btn-reveal-trigger">
-                      <div className="btn-reveal-trigger position-static">
-                        <button
-                          className="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10"
-                          type="button"
-                          data-bs-toggle="dropdown"
-                          data-boundary="window"
-                          aria-haspopup="true"
-                          aria-expanded="false"
-                          data-bs-reference="parent"
-                        >
-                          <span className="fas fa-ellipsis-h fs-10"></span>
-                        </button>
-                        <div className="dropdown-menu dropdown-menu-end py-2">
-                          <a className="dropdown-item" href="#!">
-                            View
-                          </a>
-                          <a className="dropdown-item" href="#!">
-                            Export
-                          </a>
-                          <div className="dropdown-divider"></div>
-                          <a className="dropdown-item text-danger" href="#!">
-                            Remove
-                          </a>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr className="position-static">
-                    <td className="fs-9 align-middle">
-                      <div className="form-check mb-0 fs-8">
-                        <input
-                          className="form-check-input"
-                          type="checkbox"
-                          data-bulk-select-row='{"product":"Amazon Basics Matte Black Wired Keyboard - US Layout (QWERTY)","productImage":"/products/8.png","price":"$98","category":"Fashion","tags":["Keyboard","Smooth","Butter","RGB","Black"],"star":false,"vendor":"Green fashion","publishedOn":"Nov 3, 12:27 PM"}'
-                        />
-                      </div>
-                    </td>
-                    <td className="align-middle white-space-nowrap py-0">
-                      <a
-                        className="d-block border border-translucent rounded-2"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        <img
-                          src="../../../assets/img//products/8.png"
-                          alt=""
-                          width="53"
-                        />
-                      </a>
-                    </td>
-                    <td className="product align-middle ps-4">
-                      <a
-                        className="fw-semibold line-clamp-3 mb-0"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        Amazon Basics Matte Black Wired Keyboard - US Layout
-                        (QWERTY)
-                      </a>
-                    </td>
-                    <td className="price align-middle white-space-nowrap text-end fw-bold text-body-tertiary ps-4">
-                      $98
-                    </td>
-                    <td className="category align-middle white-space-nowrap text-body-quaternary fs-9 ps-4 fw-semibold">
-                      Fashion
-                    </td>
-                    <td
-                      className="tags align-middle review pb-2 ps-3"
-                      style={{minWidth:"225px"}}
-                    >
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Keyboard</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Smooth</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Butter</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">RGB</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Black</span>
-                      </a>
-                    </td>
-                    <td className="align-middle review fs-8 text-center ps-4">
-                      <div className="d-toggle-container">
-                        <div className="d-block-hover">
-                          <span className="fas fa-star text-warning"></span>
-                        </div>
-                        <div className="d-none-hover">
-                          <span className="far fa-star text-warning"></span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="vendor align-middle text-start fw-semibold ps-4">
-                      <a href="#!">Green fashion</a>
-                    </td>
-                    <td className="time align-middle white-space-nowrap text-body-tertiary text-opacity-85 ps-4">
-                      Nov 3, 12:27 PM
-                    </td>
-                    <td className="align-middle white-space-nowrap text-end pe-0 ps-4 btn-reveal-trigger">
-                      <div className="btn-reveal-trigger position-static">
-                        <button
-                          className="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10"
-                          type="button"
-                          data-bs-toggle="dropdown"
-                          data-boundary="window"
-                          aria-haspopup="true"
-                          aria-expanded="false"
-                          data-bs-reference="parent"
-                        >
-                          <span className="fas fa-ellipsis-h fs-10"></span>
-                        </button>
-                        <div className="dropdown-menu dropdown-menu-end py-2">
-                          <a className="dropdown-item" href="#!">
-                            View
-                          </a>
-                          <a className="dropdown-item" href="#!">
-                            Export
-                          </a>
-                          <div className="dropdown-divider"></div>
-                          <a className="dropdown-item text-danger" href="#!">
-                            Remove
-                          </a>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr className="position-static">
-                    <td className="fs-9 align-middle">
-                      <div className="form-check mb-0 fs-8">
-                        <input
-                          className="form-check-input"
-                          type="checkbox"
-                          data-bulk-select-row='{"product":"Apple Magic Mouse (Wireless, Rechargable) - Silver","productImage":"/products/10.png","price":"$568","category":"Fashion","tags":["Apple","Wireless","Battery","Magic","Performance"],"star":false,"vendor":"Eastacy","publishedOn":"Nov 1, 9:39 AM"}'
-                        />
-                      </div>
-                    </td>
-                    <td className="align-middle white-space-nowrap py-0">
-                      <a
-                        className="d-block border border-translucent rounded-2"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        <img
-                          src="../../../assets/img//products/10.png"
-                          alt=""
-                          width="53"
-                        />
-                      </a>
-                    </td>
-                    <td className="product align-middle ps-4">
-                      <a
-                        className="fw-semibold line-clamp-3 mb-0"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        Apple Magic Mouse (Wireless, Rechargable) - Silver
-                      </a>
-                    </td>
-                    <td className="price align-middle white-space-nowrap text-end fw-bold text-body-tertiary ps-4">
-                      $568
-                    </td>
-                    <td className="category align-middle white-space-nowrap text-body-quaternary fs-9 ps-4 fw-semibold">
-                      Fashion
-                    </td>
-                    <td
-                      className="tags align-middle review pb-2 ps-3"
-                      style={{minWidth:"225px"}}
-                    >
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Apple</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Wireless</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Battery</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Magic</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">
-                          Performance
-                        </span>
-                      </a>
-                    </td>
-                    <td className="align-middle review fs-8 text-center ps-4">
-                      <div className="d-toggle-container">
-                        <div className="d-block-hover">
-                          <span className="fas fa-star text-warning"></span>
-                        </div>
-                        <div className="d-none-hover">
-                          <span className="far fa-star text-warning"></span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="vendor align-middle text-start fw-semibold ps-4">
-                      <a href="#!">Eastacy</a>
-                    </td>
-                    <td className="time align-middle white-space-nowrap text-body-tertiary text-opacity-85 ps-4">
-                      Nov 1, 9:39 AM
-                    </td>
-                    <td className="align-middle white-space-nowrap text-end pe-0 ps-4 btn-reveal-trigger">
-                      <div className="btn-reveal-trigger position-static">
-                        <button
-                          className="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10"
-                          type="button"
-                          data-bs-toggle="dropdown"
-                          data-boundary="window"
-                          aria-haspopup="true"
-                          aria-expanded="false"
-                          data-bs-reference="parent"
-                        >
-                          <span className="fas fa-ellipsis-h fs-10"></span>
-                        </button>
-                        <div className="dropdown-menu dropdown-menu-end py-2">
-                          <a className="dropdown-item" href="#!">
-                            View
-                          </a>
-                          <a className="dropdown-item" href="#!">
-                            Export
-                          </a>
-                          <div className="dropdown-divider"></div>
-                          <a className="dropdown-item text-danger" href="#!">
-                            Remove
-                          </a>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr className="position-static">
-                    <td className="fs-9 align-middle">
-                      <div className="form-check mb-0 fs-8">
-                        <input
-                          className="form-check-input"
-                          type="checkbox"
-                          data-bulk-select-row='{"product":"HORI Racing Wheel Apex for PlayStation 4_3, and PC","productImage":"/products/12.png","price":"$17","category":"Drinks","tags":["Steering","Gaming","PS4/3","Racing","Apex"],"star":false,"vendor":"BrewerBro","publishedOn":"Oct 30, 3:49 PM"}'
-                        />
-                      </div>
-                    </td>
-                    <td className="align-middle white-space-nowrap py-0">
-                      <a
-                        className="d-block border border-translucent rounded-2"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        <img
-                          src="../../../assets/img//products/12.png"
-                          alt=""
-                          width="53"
-                        />
-                      </a>
-                    </td>
-                    <td className="product align-middle ps-4">
-                      <a
-                        className="fw-semibold line-clamp-3 mb-0"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        HORI Racing Wheel Apex for PlayStation 4_3, and PC
-                      </a>
-                    </td>
-                    <td className="price align-middle white-space-nowrap text-end fw-bold text-body-tertiary ps-4">
-                      $17
-                    </td>
-                    <td className="category align-middle white-space-nowrap text-body-quaternary fs-9 ps-4 fw-semibold">
-                      Drinks
-                    </td>
-                    <td
-                      className="tags align-middle review pb-2 ps-3"
-                      style={{minWidth:"225px"}}
-                    >
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Steering</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Gaming</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">PS4/3</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Racing</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Apex</span>
-                      </a>
-                    </td>
-                    <td className="align-middle review fs-8 text-center ps-4">
-                      <div className="d-toggle-container">
-                        <div className="d-block-hover">
-                          <span className="fas fa-star text-warning"></span>
-                        </div>
-                        <div className="d-none-hover">
-                          <span className="far fa-star text-warning"></span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="vendor align-middle text-start fw-semibold ps-4">
-                      <a href="#!">BrewerBro</a>
-                    </td>
-                    <td className="time align-middle white-space-nowrap text-body-tertiary text-opacity-85 ps-4">
-                      Oct 30, 3:49 PM
-                    </td>
-                    <td className="align-middle white-space-nowrap text-end pe-0 ps-4 btn-reveal-trigger">
-                      <div className="btn-reveal-trigger position-static">
-                        <button
-                          className="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10"
-                          type="button"
-                          data-bs-toggle="dropdown"
-                          data-boundary="window"
-                          aria-haspopup="true"
-                          aria-expanded="false"
-                          data-bs-reference="parent"
-                        >
-                          <span className="fas fa-ellipsis-h fs-10"></span>
-                        </button>
-                        <div className="dropdown-menu dropdown-menu-end py-2">
-                          <a className="dropdown-item" href="#!">
-                            View
-                          </a>
-                          <a className="dropdown-item" href="#!">
-                            Export
-                          </a>
-                          <div className="dropdown-divider"></div>
-                          <a className="dropdown-item text-danger" href="#!">
-                            Remove
-                          </a>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr className="position-static">
-                    <td className="fs-9 align-middle">
-                      <div className="form-check mb-0 fs-8">
-                        <input
-                          className="form-check-input"
-                          type="checkbox"
-                          data-bulk-select-row='{"product":"Apple Pencil (2nd Generation)","productImage":"/products/21.png","price":"$28","category":"Fashion","tags":["Apple","Creativity","Color","Stunning","Apex"],"star":false,"vendor":"Eastacy","publishedOn":"Nov 25, 5:00 PM"}'
-                        />
-                      </div>
-                    </td>
-                    <td className="align-middle white-space-nowrap py-0">
-                      <a
-                        className="d-block border border-translucent rounded-2"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        <img
-                          src="../../../assets/img//products/21.png"
-                          alt=""
-                          width="53"
-                        />
-                      </a>
-                    </td>
-                    <td className="product align-middle ps-4">
-                      <a
-                        className="fw-semibold line-clamp-3 mb-0"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        Apple Pencil (2nd Generation)
-                      </a>
-                    </td>
-                    <td className="price align-middle white-space-nowrap text-end fw-bold text-body-tertiary ps-4">
-                      $28
-                    </td>
-                    <td className="category align-middle white-space-nowrap text-body-quaternary fs-9 ps-4 fw-semibold">
-                      Fashion
-                    </td>
-                    <td
-                      className="tags align-middle review pb-2 ps-3"
-                      style={{minWidth:"225px"}}
-                    >
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Apple</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">
-                          Creativity
-                        </span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Color</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Stunning</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Apex</span>
-                      </a>
-                    </td>
-                    <td className="align-middle review fs-8 text-center ps-4">
-                      <div className="d-toggle-container">
-                        <div className="d-block-hover">
-                          <span className="fas fa-star text-warning"></span>
-                        </div>
-                        <div className="d-none-hover">
-                          <span className="far fa-star text-warning"></span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="vendor align-middle text-start fw-semibold ps-4">
-                      <a href="#!">Eastacy</a>
-                    </td>
-                    <td className="time align-middle white-space-nowrap text-body-tertiary text-opacity-85 ps-4">
-                      Nov 25, 5:00 PM
-                    </td>
-                    <td className="align-middle white-space-nowrap text-end pe-0 ps-4 btn-reveal-trigger">
-                      <div className="btn-reveal-trigger position-static">
-                        <button
-                          className="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10"
-                          type="button"
-                          data-bs-toggle="dropdown"
-                          data-boundary="window"
-                          aria-haspopup="true"
-                          aria-expanded="false"
-                          data-bs-reference="parent"
-                        >
-                          <span className="fas fa-ellipsis-h fs-10"></span>
-                        </button>
-                        <div className="dropdown-menu dropdown-menu-end py-2">
-                          <a className="dropdown-item" href="#!">
-                            View
-                          </a>
-                          <a className="dropdown-item" href="#!">
-                            Export
-                          </a>
-                          <div className="dropdown-divider"></div>
-                          <a className="dropdown-item text-danger" href="#!">
-                            Remove
-                          </a>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr className="position-static">
-                    <td className="fs-9 align-middle">
-                      <div className="form-check mb-0 fs-8">
-                        <input
-                          className="form-check-input"
-                          type="checkbox"
-                          data-bulk-select-row='{"product":"Apple AirPods (2nd Generation)","productImage":"/products/16.png","price":"$20","category":"Fashion","tags":["Music","Audio","Meeting","Record","Sound"],"star":true,"vendor":"FutureTech Inc","publishedOn":"Sep 20, 1:00 PM"}'
-                        />
-                      </div>
-                    </td>
-                    <td className="align-middle white-space-nowrap py-0">
-                      <a
-                        className="d-block border border-translucent rounded-2"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        <img
-                          src="../../../assets/img//products/16.png"
-                          alt=""
-                          width="53"
-                        />
-                      </a>
-                    </td>
-                    <td className="product align-middle ps-4">
-                      <a
-                        className="fw-semibold line-clamp-3 mb-0"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        Apple AirPods (2nd Generation)
-                      </a>
-                    </td>
-                    <td className="price align-middle white-space-nowrap text-end fw-bold text-body-tertiary ps-4">
-                      $20
-                    </td>
-                    <td className="category align-middle white-space-nowrap text-body-quaternary fs-9 ps-4 fw-semibold">
-                      Fashion
-                    </td>
-                    <td
-                      className="tags align-middle review pb-2 ps-3"
-                      style={{minWidth:"225px"}}
-                    >
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Music</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Audio</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Meeting</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Record</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Sound</span>
-                      </a>
-                    </td>
-                    <td className="align-middle review fs-8 text-center ps-4">
-                      <span className="fas fa-star text-warning"></span>
-                    </td>
-                    <td className="vendor align-middle text-start fw-semibold ps-4">
-                      <a href="#!">FutureTech Inc</a>
-                    </td>
-                    <td className="time align-middle white-space-nowrap text-body-tertiary text-opacity-85 ps-4">
-                      Sep 20, 1:00 PM
-                    </td>
-                    <td className="align-middle white-space-nowrap text-end pe-0 ps-4 btn-reveal-trigger">
-                      <div className="btn-reveal-trigger position-static">
-                        <button
-                          className="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10"
-                          type="button"
-                          data-bs-toggle="dropdown"
-                          data-boundary="window"
-                          aria-haspopup="true"
-                          aria-expanded="false"
-                          data-bs-reference="parent"
-                        >
-                          <span className="fas fa-ellipsis-h fs-10"></span>
-                        </button>
-                        <div className="dropdown-menu dropdown-menu-end py-2">
-                          <a className="dropdown-item" href="#!">
-                            View
-                          </a>
-                          <a className="dropdown-item" href="#!">
-                            Export
-                          </a>
-                          <div className="dropdown-divider"></div>
-                          <a className="dropdown-item text-danger" href="#!">
-                            Remove
-                          </a>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr className="position-static">
-                    <td className="fs-9 align-middle">
-                      <div className="form-check mb-0 fs-8">
-                        <input
-                          className="form-check-input"
-                          type="checkbox"
-                          data-bulk-select-row='{"product":"Xbox Series S","productImage":"/products/17.png","price":"$30","category":"Gadget","tags":["Lifestyle","Audio","Magic","Performance","Apex"],"star":false,"vendor":"FutureTech Inc","publishedOn":"Oct 18, 3:40 PM"}'
-                        />
-                      </div>
-                    </td>
-                    <td className="align-middle white-space-nowrap py-0">
-                      <a
-                        className="d-block border border-translucent rounded-2"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        <img
-                          src="../../../assets/img//products/17.png"
-                          alt=""
-                          width="53"
-                        />
-                      </a>
-                    </td>
-                    <td className="product align-middle ps-4">
-                      <a
-                        className="fw-semibold line-clamp-3 mb-0"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        Xbox Series S
-                      </a>
-                    </td>
-                    <td className="price align-middle white-space-nowrap text-end fw-bold text-body-tertiary ps-4">
-                      $30
-                    </td>
-                    <td className="category align-middle white-space-nowrap text-body-quaternary fs-9 ps-4 fw-semibold">
-                      Gadget
-                    </td>
-                    <td
-                      className="tags align-middle review pb-2 ps-3"
-                      style={{minWidth:"225px"}}
-                    >
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Lifestyle</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Audio</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Magic</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">
-                          Performance
-                        </span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Apex</span>
-                      </a>
-                    </td>
-                    <td className="align-middle review fs-8 text-center ps-4">
-                      <div className="d-toggle-container">
-                        <div className="d-block-hover">
-                          <span className="fas fa-star text-warning"></span>
-                        </div>
-                        <div className="d-none-hover">
-                          <span className="far fa-star text-warning"></span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="vendor align-middle text-start fw-semibold ps-4">
-                      <a href="#!">FutureTech Inc</a>
-                    </td>
-                    <td className="time align-middle white-space-nowrap text-body-tertiary text-opacity-85 ps-4">
-                      Oct 18, 3:40 PM
-                    </td>
-                    <td className="align-middle white-space-nowrap text-end pe-0 ps-4 btn-reveal-trigger">
-                      <div className="btn-reveal-trigger position-static">
-                        <button
-                          className="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10"
-                          type="button"
-                          data-bs-toggle="dropdown"
-                          data-boundary="window"
-                          aria-haspopup="true"
-                          aria-expanded="false"
-                          data-bs-reference="parent"
-                        >
-                          <span className="fas fa-ellipsis-h fs-10"></span>
-                        </button>
-                        <div className="dropdown-menu dropdown-menu-end py-2">
-                          <a className="dropdown-item" href="#!">
-                            View
-                          </a>
-                          <a className="dropdown-item" href="#!">
-                            Export
-                          </a>
-                          <div className="dropdown-divider"></div>
-                          <a className="dropdown-item text-danger" href="#!">
-                            Remove
-                          </a>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr className="position-static">
-                    <td className="fs-9 align-middle">
-                      <div className="form-check mb-0 fs-8">
-                        <input
-                          className="form-check-input"
-                          type="checkbox"
-                          data-bulk-select-row='{"product":"Seagate Portable 2TB External Hard Drive Portable HDD","productImage":"/products/18.png","price":"$50","category":"Accessories","tags":["Portable","Gaming","Magic","Performance","Black"],"star":false,"vendor":"Kizzstore","publishedOn":"Sep 20, 1:00 PM"}'
-                        />
-                      </div>
-                    </td>
-                    <td className="align-middle white-space-nowrap py-0">
-                      <a
-                        className="d-block border border-translucent rounded-2"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        <img
-                          src="../../../assets/img//products/18.png"
-                          alt=""
-                          width="53"
-                        />
-                      </a>
-                    </td>
-                    <td className="product align-middle ps-4">
-                      <a
-                        className="fw-semibold line-clamp-3 mb-0"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        Seagate Portable 2TB External Hard Drive Portable HDD
-                      </a>
-                    </td>
-                    <td className="price align-middle white-space-nowrap text-end fw-bold text-body-tertiary ps-4">
-                      $50
-                    </td>
-                    <td className="category align-middle white-space-nowrap text-body-quaternary fs-9 ps-4 fw-semibold">
-                      Accessories
-                    </td>
-                    <td
-                      className="tags align-middle review pb-2 ps-3"
-                      style={{minWidth:"225px"}}
-                    >
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Portable</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Gaming</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Magic</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">
-                          Performance
-                        </span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Black</span>
-                      </a>
-                    </td>
-                    <td className="align-middle review fs-8 text-center ps-4">
-                      <div className="d-toggle-container">
-                        <div className="d-block-hover">
-                          <span className="fas fa-star text-warning"></span>
-                        </div>
-                        <div className="d-none-hover">
-                          <span className="far fa-star text-warning"></span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="vendor align-middle text-start fw-semibold ps-4">
-                      <a href="#!">Kizzstore</a>
-                    </td>
-                    <td className="time align-middle white-space-nowrap text-body-tertiary text-opacity-85 ps-4">
-                      Sep 20, 1:00 PM
-                    </td>
-                    <td className="align-middle white-space-nowrap text-end pe-0 ps-4 btn-reveal-trigger">
-                      <div className="btn-reveal-trigger position-static">
-                        <button
-                          className="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10"
-                          type="button"
-                          data-bs-toggle="dropdown"
-                          data-boundary="window"
-                          aria-haspopup="true"
-                          aria-expanded="false"
-                          data-bs-reference="parent"
-                        >
-                          <span className="fas fa-ellipsis-h fs-10"></span>
-                        </button>
-                        <div className="dropdown-menu dropdown-menu-end py-2">
-                          <a className="dropdown-item" href="#!">
-                            View
-                          </a>
-                          <a className="dropdown-item" href="#!">
-                            Export
-                          </a>
-                          <div className="dropdown-divider"></div>
-                          <a className="dropdown-item text-danger" href="#!">
-                            Remove
-                          </a>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr className="position-static">
-                    <td className="fs-9 align-middle">
-                      <div className="form-check mb-0 fs-8">
-                        <input
-                          className="form-check-input"
-                          type="checkbox"
-                          data-bulk-select-row='{"product":"Intel Core i9-11900K Desktop Processor 8 Cores up to 5.3 GHz Unlocked","productImage":"/products/19.png","price":"$80","category":"Accessories","tags":["Intel","Gaming","Apex","Performance","Lifestyle"],"star":true,"vendor":"BrewerBro","publishedOn":"Dec 01, 12:00 PM"}'
-                        />
-                      </div>
-                    </td>
-                    <td className="align-middle white-space-nowrap py-0">
-                      <a
-                        className="d-block border border-translucent rounded-2"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        <img
-                          src="../../../assets/img//products/19.png"
-                          alt=""
-                          width="53"
-                        />
-                      </a>
-                    </td>
-                    <td className="product align-middle ps-4">
-                      <a
-                        className="fw-semibold line-clamp-3 mb-0"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        Intel Core i9-11900K Desktop Processor 8 Cores up to 5.3
-                        GHz Unlocked
-                      </a>
-                    </td>
-                    <td className="price align-middle white-space-nowrap text-end fw-bold text-body-tertiary ps-4">
-                      $80
-                    </td>
-                    <td className="category align-middle white-space-nowrap text-body-quaternary fs-9 ps-4 fw-semibold">
-                      Accessories
-                    </td>
-                    <td
-                      className="tags align-middle review pb-2 ps-3"
-                      style={{minWidth:"225px"}}
-                    >
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Intel</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Gaming</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Apex</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">
-                          Performance
-                        </span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Lifestyle</span>
-                      </a>
-                    </td>
-                    <td className="align-middle review fs-8 text-center ps-4">
-                      <span className="fas fa-star text-warning"></span>
-                    </td>
-                    <td className="vendor align-middle text-start fw-semibold ps-4">
-                      <a href="#!">BrewerBro</a>
-                    </td>
-                    <td className="time align-middle white-space-nowrap text-body-tertiary text-opacity-85 ps-4">
-                      Dec 01, 12:00 PM
-                    </td>
-                    <td className="align-middle white-space-nowrap text-end pe-0 ps-4 btn-reveal-trigger">
-                      <div className="btn-reveal-trigger position-static">
-                        <button
-                          className="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10"
-                          type="button"
-                          data-bs-toggle="dropdown"
-                          data-boundary="window"
-                          aria-haspopup="true"
-                          aria-expanded="false"
-                          data-bs-reference="parent"
-                        >
-                          <span className="fas fa-ellipsis-h fs-10"></span>
-                        </button>
-                        <div className="dropdown-menu dropdown-menu-end py-2">
-                          <a className="dropdown-item" href="#!">
-                            View
-                          </a>
-                          <a className="dropdown-item" href="#!">
-                            Export
-                          </a>
-                          <div className="dropdown-divider"></div>
-                          <a className="dropdown-item text-danger" href="#!">
-                            Remove
-                          </a>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr className="position-static">
-                    <td className="fs-9 align-middle">
-                      <div className="form-check mb-0 fs-8">
-                        <input
-                          className="form-check-input"
-                          type="checkbox"
-                          data-bulk-select-row='{"product":"ASUS TUF Gaming F15 Gaming Laptop","productImage":"/products/20.png","price":"$150","category":"Computer","tags":["Gaming","Battery","Performance","Wireless"],"star":false,"vendor":"Kizzstore","publishedOn":"Dec 01, 12:00 PM"}'
-                        />
-                      </div>
-                    </td>
-                    <td className="align-middle white-space-nowrap py-0">
-                      <a
-                        className="d-block border border-translucent rounded-2"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        <img
-                          src="../../../assets/img//products/20.png"
-                          alt=""
-                          width="53"
-                        />
-                      </a>
-                    </td>
-                    <td className="product align-middle ps-4">
-                      <a
-                        className="fw-semibold line-clamp-3 mb-0"
-                        href="../../../apps/e-commerce/landing/product-details.html"
-                      >
-                        ASUS TUF Gaming F15 Gaming Laptop
-                      </a>
-                    </td>
-                    <td className="price align-middle white-space-nowrap text-end fw-bold text-body-tertiary ps-4">
-                      $150
-                    </td>
-                    <td className="category align-middle white-space-nowrap text-body-quaternary fs-9 ps-4 fw-semibold">
-                      Computer
-                    </td>
-                    <td
-                      className="tags align-middle review pb-2 ps-3"
-                      style={{minWidth:"225px"}}
-                    >
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Gaming</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Battery</span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">
-                          Performance
-                        </span>
-                      </a>
-                      <a className="text-decoration-none" href="#!">
-                        <span className="badge badge-tag me-2 mb-2">Wireless</span>
-                      </a>
-                    </td>
-                    <td className="align-middle review fs-8 text-center ps-4">
-                      <div className="d-toggle-container">
-                        <div className="d-block-hover">
-                          <span className="fas fa-star text-warning"></span>
-                        </div>
-                        <div className="d-none-hover">
-                          <span className="far fa-star text-warning"></span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="vendor align-middle text-start fw-semibold ps-4">
-                      <a href="#!">Kizzstore</a>
-                    </td>
-                    <td className="time align-middle white-space-nowrap text-body-tertiary text-opacity-85 ps-4">
-                      Dec 01, 12:00 PM
-                    </td>
-                    <td className="align-middle white-space-nowrap text-end pe-0 ps-4 btn-reveal-trigger">
-                      <div className="btn-reveal-trigger position-static">
-                        <button
-                          className="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10"
-                          type="button"
-                          data-bs-toggle="dropdown"
-                          data-boundary="window"
-                          aria-haspopup="true"
-                          aria-expanded="false"
-                          data-bs-reference="parent"
-                        >
-                          <span className="fas fa-ellipsis-h fs-10"></span>
-                        </button>
-                        <div className="dropdown-menu dropdown-menu-end py-2">
-                          <a className="dropdown-item" href="#!">
-                            View
-                          </a>
-                          <a className="dropdown-item" href="#!">
-                            Export
-                          </a>
-                          <div className="dropdown-divider"></div>
-                          <a className="dropdown-item text-danger" href="#!">
-                            Remove
-                          </a>
-                        </div>
-                      </div>
-                    </td>
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="template">
+                    <td className="product"></td>
+                    <td className="price"></td>
+                    <td className="category"></td>
+                    <td className="vendor"></td>
+                    <td className="time"></td>
                   </tr>
                 </tbody>
               </table>
@@ -1867,7 +396,11 @@ function AdminProductsList() {
                     data-fa-transform="down-1"
                   ></span>
                 </a>
-                <a className="fw-semibold d-none" href="#!" data-list-view="less">
+                <a
+                  className="fw-semibold d-none"
+                  href="#!"
+                  data-list-view="less"
+                >
                   View Less
                   <span
                     className="fas fa-angle-right ms-1"
@@ -1888,8 +421,98 @@ function AdminProductsList() {
           </div>
         </div>
       </div>
+
+      {/* add product modal */}
+      <div
+        className="modal fade"
+        id="productModal"
+        tabIndex="-1"
+        aria-labelledby="productModalLabel"
+        aria-hidden="true"
+      >
+        <div className="modal-dialog modal-lg modal-dialog-centered">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h5 className="modal-title" id="productModalLabel">
+                Add / Edit Product
+              </h5>
+              <button
+                type="button"
+                className="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></button>
+            </div>
+            <div className="modal-body">
+              <form id="productForm">
+                <div className="row g-3">
+                  <div className="col-md-6">
+                    <label className="form-label">Product Name</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="ProductName"
+                    />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Company Name</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="CompanyName"
+                    />
+                  </div>
+                  <div className="col-12">
+                    <label className="form-label">Description</label>
+                    <textarea
+                      className="form-control"
+                      name="Description"
+                    ></textarea>
+                  </div>
+                  <div className="col-md-4">
+                    <label className="form-label">Price (Nrs.)</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      name="Price"
+                    />
+                  </div>
+                  <div className="col-md-4">
+                    <label className="form-label">Image Filename</label>
+                    <input type="text" className="form-control" name="Image" />
+                  </div>
+                  <div className="col-md-4">
+                    <label className="form-label">Category:</label>
+                    <select className="form-control" name="Category">
+                      {categories.map((category) => (
+                        <option value={category.id} key={category.id}>
+                          {category.CategoryName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </form>
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                data-bs-dismiss="modal"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleSubmitProduct}
+              >
+                Save Product
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
-
-export default AdminProductsList;

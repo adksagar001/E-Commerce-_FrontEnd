@@ -40,7 +40,7 @@ const Navbar = ({ onSearch }) => {
                   <div className="col-auto">
                     <a
                       className="text-decoration-none"
-                      href="../../../index.html"
+                      href="/"
                     >
                       <div className="d-flex align-items-center">
                         <img src="/logos/favicon.png" alt="logo" width="27" />

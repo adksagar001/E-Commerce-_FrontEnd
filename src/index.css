@@ -66,3 +66,18 @@ body.dark-theme {
   font-size: 14px;
   font-weight: 500;
 }
+
+.btn-primary {
+  background-color: #00809d;
+  color: white;
+}
+.nav-link.active,
+.active {
+  color: var(#00809d) !important;
+}
+:root {
+  --primary-color: #00809d;
+  --primary-color-hover: #00718a;
+  --primary-color-active: #005f73;
+  --primary-text-color: #ffffff;
+}

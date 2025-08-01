@@ -7,9 +7,11 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
 
     try {
       const response = await axios.post(
@@ -19,15 +21,14 @@ const Login = () => {
           password,
         }
       );
-      debugger;
       // Save the JWT token (optional: save to localStorage)
       localStorage.setItem("orgToken", response.data.token);
-
       // Redirect or show success
-      alert("Login Successful!");
       window.location.href = "/admindashboard"; // or navigate programmatically
     } catch (err) {
       setError(err.response?.data?.message || "Invalid email or password");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -122,9 +123,15 @@ const Login = () => {
                   </div>
                 </div>
 
-                <button type="submit" className="btn btn-primary w-100 mb-3">
-                  Sign In
+                <button
+                  className="btn btn-primary w-100 mb-3"
+                  type="submit"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Signing in..." : "Sign in"}
                 </button>
+
+               
 
                 <div className="text-center">
                   <a className="fs-9 fw-bold" href="/register">
