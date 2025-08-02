@@ -1,6 +1,5 @@
 // src/pages/NotFound.js
 import React from "react";
-
 const NotFound = () => {
 //   return (
 //     <div className="text-center mt-5">
@@ -16,7 +15,7 @@ const NotFound = () => {
                         <div className="col-12 col-lg-6 text-center order-lg-1"><img className="img-fluid w-lg-100 d-dark-none" src="../../assets/spot-illustrations/404-illustration.png" alt="" width="400" /><img className="img-fluid w-md-50 w-lg-100 d-light-none" src="../../assets/img/spot-illustrations/dark_404-illustration.png" alt="" width="540" /></div>
                         <div className="col-12 col-lg-6 text-center text-lg-start"><img className="img-fluid mb-6 w-50 w-lg-75 d-dark-none" src="../../assets/img/spot-illustrations/404.png" alt="" /><img className="img-fluid mb-6 w-50 w-lg-75 d-light-none" src="../../assets/img/spot-illustrations/dark_404.png" alt="" />
                             <h2 className="text-body-secondary fw-bolder mb-3">Page Missing!</h2>
-                            <p className="text-body mb-5">But no worries! Our ostrich is looking everywhere <br className="d-none d-sm-block" />while you wait safely. </p><a className="btn btn-lg btn-primary" href="../../index.html">Go Home</a>
+                            <p className="text-body mb-5">But no worries! Our ostrich is looking everywhere <br className="d-none d-sm-block" />while you wait safely. </p><a className="btn btn-lg btn-primary" href="/">Go Home</a>
                         </div>
                     </div>
                 </div>

@@ -95,8 +95,12 @@ export const apiGet = async (endpoint, setData, setLoading = () => {}) => {
   }
 };
 // ✅ GET with params/ID and JWT
-export const apiGetWithParams = async (endpoint, params = {}, setData, setLoading = () => { }) => {
-  
+export const apiGetWithParams = async (
+  endpoint,
+  params = {},
+  setData,
+  setLoading = () => {}
+) => {
   setLoading(true);
   showLoading();
 
