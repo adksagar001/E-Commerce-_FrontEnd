@@ -1,7 +1,7 @@
 import Swal from "sweetalert2";
 
 const BASE_URL = "https://e-commerce-backend-uwc4.onrender.com/";
-// const BASE_URL = "http://localhost:5000/";
+ //const BASE_URL = "http://localhost:5000/";
 
 //-----------------Reusable functions--------
 function showLoading() {
@@ -20,6 +20,7 @@ function handleError(error) {
 
 //--------------ApiCall without any Data--------------
 export const ApiCallWithoutDataNoAsync = (endpoint, setData, setLoading) => {
+  
   setLoading(true);
 
   fetch(`${BASE_URL}${endpoint}`)
@@ -37,6 +38,7 @@ export const ApiCallWithoutDataNoAsync = (endpoint, setData, setLoading) => {
 //-----------------------ApiCallwithoutData but with SessionStorage for loggedin users only------------
 export const ApiCallWithLocalStorageWithoutData = async (endpoint, setData) => {
   showLoading();
+  
   try {
     const token = localStorage.getItem("orgToken");
     if (!token) throw new Error("No JWT token found in local storage.");
@@ -94,13 +96,9 @@ export const apiGet = async (endpoint, setData, setLoading = () => {}) => {
     Swal.close();
   }
 };
-// ✅ GET with params/ID and JWT
-export const apiGetWithParams = async (
-  endpoint,
-  params = {},
-  setData,
-  setLoading = () => {}
-) => {
+// ✅ GET with params/ID and JWT in url
+export const apiGetWithParams = async (endpoint, params = {}, setData, setLoading = () => { }) => {
+  
   setLoading(true);
   showLoading();
 
@@ -158,8 +156,40 @@ export const ApiPostWithLocalStorage = async (endpoint, payload, onSuccess) => {
       const error = await response.json();
       throw new Error(error.message || "Failed to post data");
     }
+    const result = await response.json();
+    if (onSuccess) onSuccess(result);
+  } catch (error) {
+    Swal.fire("Error", error.message, "error");
+  } finally {
+    Swal.close();
+  }
+};
+// ✅ POST without Auth
+export const ApiPostWithoutAuth = async (endpoint, payload, onSuccess) => {
+  Swal.fire({
+    title: "Please Wait...",
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+    },
+  });
 
-    if (onSuccess) onSuccess();
+  try {
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to post data");
+    }
+
+    const result = await response.json();
+    if (onSuccess) onSuccess(result);
   } catch (error) {
     Swal.fire("Error", error.message, "error");
   } finally {

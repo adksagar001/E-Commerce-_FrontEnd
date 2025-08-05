@@ -1,19 +1,25 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import feather from "feather-icons";
+import { ApiCallWithoutDataNoAsync } from "../services/api";
+
+  const Token = localStorage.getItem("orgToken");
+  const Name = localStorage.getItem("orgName");
 
 const Navbar = ({ onSearch }) => {
   const location = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   useEffect(() => {
-    feather.replace(); 
+    feather.replace();
   });
-  const navItems = [
-    { name: "Home", path: "/" },
-    { name: "Login", path: "/login" },
-    { name: "SignUp", path: "/register" },
-  ];
 
+  const navItems =
+     [
+          { name: "Home", path: "/" },
+          { name: "Login", path: "/login" },
+          { name: "SignUp", path: "/register" },
+        ]
+    
   if (
     location.pathname === "/login" ||
     location.pathname === "/register" ||
@@ -25,10 +31,15 @@ const Navbar = ({ onSearch }) => {
     const term = e.target.value;
     setSearchTerm(term);
     if (onSearch) {
-      onSearch(term); 
+      onSearch(term);
     }
   };
-
+  //----------------fetchg the categories----------
+  const [categories, setCategories] = useState([]);
+  const [Loading, setCatLoading] = useState(true);
+  useEffect(() => {
+    ApiCallWithoutDataNoAsync("categories/cats", setCategories, setCatLoading);
+  }, []);
   return (
     <>
       <main className="main" id="top">
@@ -38,10 +49,7 @@ const Navbar = ({ onSearch }) => {
               <nav className="navbar navbar-expand-lg navbar-light px-0">
                 <div className="row gx-0 gy-2 w-100 flex-between-center">
                   <div className="col-auto">
-                    <a
-                      className="text-decoration-none"
-                      href="#"
-                    >
+                    <a className="text-decoration-none" href="#">
                       <div className="d-flex align-items-center">
                         <img src="/logos/favicon.png" alt="logo" width="27" />
                         <h5 className="logo-text ms-2">BharatPokhari Stores</h5>
@@ -217,6 +225,7 @@ const Navbar = ({ onSearch }) => {
                             data-feather="user"
                             style={{ height: "20px", width: "20px" }}
                           ></span>
+                          <span className="text-body-tertiary">{Name}</span>
                         </a>
                         <div
                           className="dropdown-menu dropdown-menu-end navbar-dropdown-caret py-0 dropdown-profile shadow border mt-2"
@@ -233,7 +242,7 @@ const Navbar = ({ onSearch }) => {
                                   />
                                 </div>
                                 <h6 className="mt-2 text-body-emphasis">
-                                  Jerry Seinfield
+                                  {Name}
                                 </h6>
                               </div>
                               <div className="mb-3 mx-3">
@@ -417,8 +426,7 @@ const Navbar = ({ onSearch }) => {
                 data-category-btn="data-category-btn"
                 data-bs-toggle="dropdown"
               >
-               <span data-feather="menu" className="me-2"></span>Category
-
+                <span data-feather="menu" className="me-2"></span>Category
               </button>
               <div className="dropdown-menu border border-translucent py-0 category-dropdown-menu">
                 <div
@@ -428,93 +436,8 @@ const Navbar = ({ onSearch }) => {
                   <div className="card-body p-6 pb-3">
                     <div className="row gx-7 gy-5 mb-5">
                       {/* Category Block - Repeatable */}
-                      {[
-                        {
-                          icon: "pocket",
-                          title: "Collectibles & Art",
-                          items: [
-                            "Collectibles",
-                            "Antiques",
-                            "Sports memorabilia",
-                            "Art",
-                          ],
-                        },
-                        {
-                          icon: "home",
-                          title: "Home & Garden",
-                          items: [
-                            "Yard, Garden & Outdoor",
-                            "Crafts",
-                            "Home Improvement",
-                            "Pet Supplies",
-                          ],
-                        },
-                        {
-                          icon: "globe",
-                          title: "Sporting Goods",
-                          items: [
-                            "Outdoor Sports",
-                            "Team Sports",
-                            "Exercise & Fitness",
-                            "Golf",
-                          ],
-                        },
-                        {
-                          icon: "monitor",
-                          title: "Electronics",
-                          items: [
-                            "Computers & Tablets",
-                            "Camera & Photo",
-                            "TV, Audio & Surveillance",
-                            "Cell Phone & Accessories",
-                          ],
-                        },
-                        {
-                          icon: "truck",
-                          title: "Auto Parts & Accessories",
-                          items: [
-                            "GPS & Security Devices",
-                            "Radar & Laser Detectors",
-                            "Care & Detailing",
-                            "Scooter Parts & Accessories",
-                          ],
-                        },
-                        {
-                          icon: "codesandbox",
-                          title: "Toys & Hobbies",
-                          items: [
-                            "Radio Control",
-                            "Kids Toys",
-                            "Action Figures",
-                            "Dolls & Bears",
-                          ],
-                        },
-                        {
-                          icon: "watch",
-                          title: "Fashion",
-                          items: ["Women", "Men", "Jewelry & Watches", "Shoes"],
-                        },
-                        {
-                          icon: "music",
-                          title: "Musical Instruments & Gear",
-                          items: [
-                            "Guitar",
-                            "Pro Audio Equipment",
-                            "String",
-                            "Stage Lighting & Effects",
-                          ],
-                        },
-                        {
-                          icon: "grid",
-                          title: "Other Categories",
-                          items: [
-                            "Video Games & Consoles",
-                            "Health & Beauty",
-                            "Baby",
-                            "Business & Industrial",
-                          ],
-                        },
-                      ].map((category, index) => (
+
+                      {categories.map((category, index) => (
                         <div className="col-12 col-sm-6 col-md-4" key={index}>
                           <div className="d-flex align-items-center mb-3">
                             <span
@@ -527,7 +450,7 @@ const Navbar = ({ onSearch }) => {
                             </h6>
                           </div>
                           <div className="ms-n2">
-                            {category.items.map((item, i) => (
+                            {category.items.split(",").map((item, i) => (
                               <a
                                 key={i}
                                 className="text-body-emphasis d-block mb-1 text-decoration-none bg-body-highlight-hover px-2 py-1 rounded-2"

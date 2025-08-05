@@ -1,21 +1,50 @@
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { apiGet } from "../../services/api";
+
 function ProductDetail() {
+  const { prodId } = useParams();
+  const [productDetail, setProductDetail] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  async function FetchProductDetails() {
+    try {
+      setLoading(true);
+
+      const response = await apiGet(`products/getProductwithId/2`,setProductDetail);
+      
+    } catch (error) {
+      console.error("Error fetching product detail:", error);
+      setProductDetail(null);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    FetchProductDetails();
+  }, [prodId]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!productDetail) {
+    return <div>No product found.</div>;
+  }
+
   return (
     <>
       <section className="py-0">
-        <div className="container-small">
+        <div className="container-small" style={{ marginTop: "30px" }}>
           <nav className="mb-3" aria-label="breadcrumb">
             <ol className="breadcrumb mb-0">
               <li className="breadcrumb-item">
-                <a href="#">Fashion</a>
+                <a href="#">Product Detail</a>
               </li>
-              <li className="breadcrumb-item">
-                <a href="#">Womens fashion</a>
-              </li>
-              <li className="breadcrumb-item">
-                <a href="#">Footwear</a>
-              </li>
+
               <li className="breadcrumb-item active" aria-current="page">
-                Hills
+                {productDetail.ProductName}
               </li>
             </ol>
           </nav>
@@ -38,6 +67,7 @@ function ProductDetail() {
                       data-thumb-target="swiper-products-thumb"
                       data-products-swiper='{"slidesPerView":1,"spaceBetween":16,"thumbsEl":".swiper-products-thumb"}'
                     ></div>
+                    <img src={productDetail.Image} width="380" alt="Product Image"/>
                   </div>
                 </div>
               </div>
@@ -65,10 +95,8 @@ function ProductDetail() {
                       6548 People rated and reviewed{" "}
                     </p>
                   </div>
-                  <h3 className="mb-3 lh-sm">
-                    24" iMac® with Retina 4.5K display - Apple M1 8GB Memory -
-                    256GB SSD - w/Touch ID (Latest Model) - Blue
-                  </h3>
+                  <h3 className="mb-3 lh-sm">{productDetail.ProductName}</h3>
+                  <h4>{ productDetail.CompanyName}</h4>
                   <div className="d-flex flex-wrap align-items-start mb-3">
                     <span className="badge text-bg-success fs-9 rounded-pill me-2 fw-semibold">
                       #1 Best seller
@@ -78,32 +106,17 @@ function ProductDetail() {
                     </a>
                   </div>
                   <div className="d-flex flex-wrap align-items-center">
-                    <h1 className="me-3">$1349.99</h1>
+                    <h1 className="me-3">Nrs {productDetail.DiscountedRate}</h1>
                     <p className="text-body-quaternary text-decoration-line-through fs-6 mb-0 me-3">
-                      $1499.99
+                     Nrs {productDetail.Price}
                     </p>
-                    <p className="text-warning fw-bolder fs-6 mb-0">10% off</p>
+                    <p className="text-warning fw-bolder fs-6 mb-0">
+                      {productDetail.DiscountRate}% off
+                    </p>
                   </div>
-                  <p className="text-success fw-semibold fs-7 mb-2">In stock</p>
+                  <p className="text-success fw-semibold fs-7 mb-2">{productDetail.Quantity} items In stock</p>
                   <p className="mb-2 text-body-secondary">
-                    <strong className="text-body-highlight">
-                      Do you want it on Saturday, July 29th?
-                    </strong>{" "}
-                    Choose{" "}
-                    <strong className="text-body-highlight">
-                      Saturday Delivery{" "}
-                    </strong>
-                    at checkout if you want your order delivered within 12 hours
-                    43 minutes,{" "}
-                    <a className="fw-bold" href="#!">
-                      Details.{" "}
-                    </a>
-                    <strong className="text-body-highlight">
-                      Gift wrapping is available.
-                    </strong>
-                  </p>
-                  <p className="text-danger-dark fw-bold mb-5 mb-lg-0">
-                    Special offer ends in 23:00:45 hours
+                    {productDetail.Description}
                   </p>
                 </div>
                 <div>
@@ -201,19 +214,7 @@ function ProductDetail() {
                     </div>
                   </div>
                   <div className="row g-3 g-sm-5 align-items-end">
-                    <div className="col-12 col-sm-auto">
-                      <p className="fw-semibold mb-2 text-body">Size : </p>
-                      <div className="d-flex align-items-center">
-                        <select className="form-select w-auto">
-                          <option value="44">44</option>
-                          <option value="22">22</option>
-                          <option value="18">18</option>
-                        </select>
-                        <a className="ms-2 fs-9 fw-semibold" href="#!">
-                          Size chart
-                        </a>
-                      </div>
-                    </div>
+                   
                     <div className="col-12 col-sm">
                       <p className="fw-semibold mb-2 text-body">Quantity : </p>
                       <div className="d-flex justify-content-between align-items-end">
@@ -229,10 +230,10 @@ function ProductDetail() {
                           </button>
                           <input
                             className="form-control text-center input-spin-none bg-transparent border-0 outline-none"
-                            style="width:50px;"
+                            style={{ width: "50px" }}
                             type="number"
-                            min="1"
-                            value="2"
+                            min="1" max={productDetail.Quantity}
+                            value="1"
                           />
                           <button
                             className="btn btn-phoenix-primary px-3"

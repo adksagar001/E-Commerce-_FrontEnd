@@ -1,7 +1,18 @@
 import React, { useState } from "react";
-import axios from "axios";
-import ForgotPassword from "./ForgotPassword";
 import { Link } from "react-router-dom";
+import Swal from "sweetalert2";
+import { ApiPostWithoutAuth } from "../services/api";
+
+const LoginToSystem = async (email, password, setLoading) => {
+  return new Promise((resolve, reject) => {
+    ApiPostWithoutAuth(
+      "auth/login",
+      { email, password },
+      (data) => resolve(data),
+      setLoading
+    );
+  });
+};
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -11,25 +22,24 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
+    setError("");
 
     try {
-      const response = await axios.post("http://localhost:5000/auth/login", {
-        email,
-        password,
-      });
-      // Save the JWT token (optional: save to localStorage)
-      localStorage.setItem("orgToken", response.data.token);
-      // Redirect or show success
-      debugger;
-      window.location.href = `/${response.data.Page}`; // or navigate programmatically
+      const response = await LoginToSystem(email, password, setIsLoading);
+
+      if (!response?.token || !response?.Page) {
+        throw new Error("Invalid response from server");
+      }
+
+      localStorage.setItem("orgToken", response.token);
+      localStorage.setItem("orgName", response.user.name);
+      window.location.href = `/${response.Page}`;
     } catch (err) {
-      setError(err.response?.data?.message || "Invalid email or password");
+      setError(err.message || "Invalid email or password");
     } finally {
       setIsLoading(false);
     }
   };
-
   return (
     <main className="main" id="top">
       <div className="row vh-100 g-0">
@@ -90,6 +100,7 @@ const Login = () => {
                       type="password"
                       placeholder="Password"
                       value={password}
+                      autoComplete=".."
                       onChange={(e) => setPassword(e.target.value)}
                       required
                     />

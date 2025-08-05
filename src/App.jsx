@@ -20,6 +20,7 @@ import Mainbody from "./components/MainBody";
 import Footer from "./components/Footer";
 import ForgotPassword from "./pages/ForgotPassword"; // Import ForgotPassword page
 import AdminDashboard from "./pages/Admin/AdminDashboard";
+import ProductDetail from "./components/Customer/ProductDetail";
 
 //----------------------Place footer only on Customer Side-----------------//
 const AppWithFooter = () => {
@@ -72,7 +73,8 @@ function App() {
         <Route path="/admindashboard" element={<AdminDashboard />} />
         <Route path="/admin/products" element={<AdminProductsList />} />
         <Route path="/admin/customers" element={<AdminCustomersList/>} />
-        <Route path="/admin/CustomerDetails/:id" element={<CustomerDetails/>}/>
+        <Route path="/admin/CustomerDetails/:id" element={<CustomerDetails />} />
+        <Route path="/productDetails/:id" element={<ProductDetail/> } />
         <Route path="*" element={<NotFound />} /> 
       </Routes>
       <AppWithFooter />
