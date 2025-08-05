@@ -166,7 +166,7 @@ function AdminSideBar() {
                   <span className="toggle-line"></span>
                 </span>
               </button>
-              <a className="navbar-brand me-1 me-sm-3" href="index.html">
+              <a className="navbar-brand me-1 me-sm-3" href="#">
                 <div className="d-flex align-items-center">
                   <div className="d-flex align-items-center">
                     <img alt="logo" width="27" src="/logos/favicon.png" />

@@ -14,17 +14,15 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post(
-        "https://e-commerce-backend-uwc4.onrender.com/auth/login",
-        {
-          email,
-          password,
-        }
-      );
+      const response = await axios.post("http://localhost:5000/auth/login", {
+        email,
+        password,
+      });
       // Save the JWT token (optional: save to localStorage)
       localStorage.setItem("orgToken", response.data.token);
       // Redirect or show success
-      window.location.href = "/admindashboard"; // or navigate programmatically
+      debugger;
+      window.location.href = `/${response.data.Page}`; // or navigate programmatically
     } catch (err) {
       setError(err.response?.data?.message || "Invalid email or password");
     } finally {
@@ -130,8 +128,6 @@ const Login = () => {
                 >
                   {isLoading ? "Signing in..." : "Sign in"}
                 </button>
-
-               
 
                 <div className="text-center">
                   <a className="fs-9 fw-bold" href="/register">

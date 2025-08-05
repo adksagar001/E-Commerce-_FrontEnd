@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import Swal from "sweetalert2";
 import List from "list.js";
-import twopm from "/src/img/2pm.jpeg";
+import twopm from "/assets/img/team/15.webp";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import { ApiCallWithLocalStorageWithoutData } from "../../services/api";
 import { ApiPostWithLocalStorage } from "../../services/api";
