@@ -4,3 +4,8 @@
   --primary-color-active: #005f73;
   --primary-text-color: #ffffff;
 }
+
+.swiper-button-prev,
+.swiper-button-next {
+  color: #00809D; 
+}

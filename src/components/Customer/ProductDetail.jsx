@@ -1,12 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { apiGetWithoutAuthentication } from "../../services/api";
+import { Link } from "react-router-dom";
 
 function ProductDetail() {
   const { prodId } = useParams();
   const [productDetail, setProductDetail] = useState(null);
   const [similarProducts, setSimilarProducts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const swiperRef = useRef(null); // 👈 DOM reference to .swiper
 
   // 1️⃣ Fetch product detail
   const FetchProductDetails = async () => {
@@ -33,7 +35,6 @@ function ProductDetail() {
 
   // 2️⃣ Fetch similar products once categoryId is available
   const getOtherSimilarProducts = async (catId) => {
-    
     if (!catId) return;
     try {
       setLoading(true);
@@ -57,17 +58,38 @@ function ProductDetail() {
 
   // 🔁 Fetch similar products after product detail is loaded
   useEffect(() => {
-    
     if (productDetail && productDetail.categoryyid) {
       getOtherSimilarProducts(productDetail.categoryyid);
     }
   }, [productDetail]);
 
+  useEffect(() => {
+    if (similarProducts.length === 0) return;
+    const swiperElement = document.querySelector(".swiperSimilarProducts");
+    const swiperInstance = new Swiper(swiperElement, {
+      slidesPerView: 1,
+      spaceBetween: 16,
+      breakpoints: {
+        450: { slidesPerView: 2, spaceBetween: 16 },
+        768: { slidesPerView: 3, spaceBetween: 20 },
+        1200: { slidesPerView: 4, spaceBetween: 16 },
+        1540: { slidesPerView: 5, spaceBetween: 16 },
+      },
+      navigation: {
+        nextEl: ".swiper-button-next",
+        prevEl: ".swiper-button-prev",
+      },
+    });
 
-  
-  if (loading) return <div>Loading...</div>;
+    return () => {
+      swiperInstance.destroy(true, true);
+    };
+  }, [similarProducts]);
+
+  if (loading) return <></>;
 
   if (!productDetail) return <div>No product found.</div>;
+  if (!similarProducts) return <>no similar products</>;
 
   return (
     <>
@@ -308,13 +330,10 @@ function ProductDetail() {
             <button className="btn btn-sm btn-phoenix-primary">View all</button>
           </div>
           <div className="swiper-theme-container products-slider">
-            <div
-              className="swiper swiper theme-slider"
-              data-swiper='{"slidesPerView":1,"spaceBetween":16,"breakpoints":{"450":{"slidesPerView":2,"spaceBetween":16},"768":{"slidesPerView":3,"spaceBetween":16},"992":{"slidesPerView":4,"spaceBetween":16},"1200":{"slidesPerView":5,"spaceBetween":16},"1540":{"slidesPerView":6,"spaceBetween":16}}}'
-            >
+            <div className="swiper swiperSimilarProducts swiper theme-slider">
               <div className="swiper-wrapper">
-                {similarProducts.map((product) => (
-                  <div className="swiper-slide">
+                {similarProducts.map((product, index) => (
+                  <div className="swiper-slide" key={product.Id}>
                     <div className="position-relative text-decoration-none product-card h-100">
                       <div className="d-flex flex-column justify-content-between h-100">
                         <div>
@@ -336,18 +355,18 @@ function ProductDetail() {
                             </button>
                             <img
                               className="img-fluid"
-                              src="../../../assets/img/products/3.png"
-                              alt=""
+                              src={product.Image}
+                              alt="similar Product"
                             />
                           </div>
-                          <a
+                          <Link
+                            to={`/productDetails/${product.Id}`}
                             className="stretched-link"
-                            href="../../../apps/e-commerce/landing/product-details.html"
                           >
                             <h6 className="mb-2 lh-sm line-clamp-3 product-name">
-                                {product.productName}
+                              {product.ProductName}
                             </h6>
-                          </a>
+                          </Link>
                           <p className="fs-9">
                             <span className="fa fa-star text-warning"></span>
                             <span className="fa fa-star text-warning"></span>
@@ -355,454 +374,30 @@ function ProductDetail() {
                             <span className="fa fa-star text-warning"></span>
                             <span className="fa fa-star text-warning"></span>
                             <span className="text-body-quaternary fw-semibold ms-1">
-                              (13 people rated)
+                              <b>{product.Quantity} in Stock</b>
                             </span>
                           </p>
                         </div>
                         <div>
                           <p className="fs-9 text-body-highlight fw-bold mb-2">
-                            Apple care included
+                            {product.Description}
                           </p>
                           <div className="d-flex align-items-center mb-1">
                             <p className="me-2 text-body text-decoration-line-through mb-0">
-                              $1299.00
+                              Nrs {product.Price}
                             </p>
                             <h3 className="text-body-emphasis mb-0">
-                              $1149.00
+                              Nrs {product.DiscountedPrice}
                             </h3>
                           </div>
                           <p className="text-body-tertiary fw-semibold fs-9 lh-1 mb-0">
-                            2 colors
+                            Manufacturer: {product.CompanyName}
                           </p>
                         </div>
                       </div>
                     </div>
                   </div>
                 ))}
-
-                {/* <div className="swiper-slide">
-                  <div className="position-relative text-decoration-none product-card h-100">
-                    <div className="d-flex flex-column justify-content-between h-100">
-                      <div>
-                        <div className="border border-1 border-translucent rounded-3 position-relative mb-3">
-                          <button
-                            className="btn btn-wish btn-wish-primary z-2 d-toggle-container"
-                            data-bs-toggle="tooltip"
-                            data-bs-placement="top"
-                            title="Add to wishlist"
-                          >
-                            <span
-                              className="fas fa-heart d-block-hover"
-                              data-fa-transform="down-1"
-                            ></span>
-                            <span
-                              className="far fa-heart d-none-hover"
-                              data-fa-transform="down-1"
-                            ></span>
-                          </button>
-                          <img
-                            className="img-fluid"
-                            src="../../../assets/img/products/1.png"
-                            alt=""
-                          />
-                        </div>
-                        <a
-                          className="stretched-link"
-                          href="../../../apps/e-commerce/landing/product-details.html"
-                        >
-                          <h6 className="mb-2 lh-sm line-clamp-3 product-name">
-                            Fitbit Sense Advanced Smartwatch with Tools for
-                            Heart Health, Stress Management &amp; Skin
-                            Temperature Trends Carbon/Graphite, One Size (S
-                            &amp; L Bands)
-                          </h6>
-                        </a>
-                        <p className="fs-9">
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="text-body-quaternary fw-semibold ms-1">
-                            (59 people rated)
-                          </span>
-                        </p>
-                      </div>
-                      <div>
-                        <div className="d-flex align-items-center mb-1">
-                          <p className="me-2 text-body text-decoration-line-through mb-0">
-                            $49.99
-                          </p>
-                          <h3 className="text-body-emphasis mb-0">$34.99</h3>
-                        </div>
-                        <p className="text-body-tertiary fw-semibold fs-9 lh-1 mb-0">
-                          2 colors
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="swiper-slide">
-                  <div className="position-relative text-decoration-none product-card h-100">
-                    <div className="d-flex flex-column justify-content-between h-100">
-                      <div>
-                        <div className="border border-1 border-translucent rounded-3 position-relative mb-3">
-                          <button
-                            className="btn btn-wish btn-wish-primary z-2 d-toggle-container"
-                            data-bs-toggle="tooltip"
-                            data-bs-placement="top"
-                            title="Add to wishlist"
-                          >
-                            <span
-                              className="fas fa-heart d-block-hover"
-                              data-fa-transform="down-1"
-                            ></span>
-                            <span
-                              className="far fa-heart d-none-hover"
-                              data-fa-transform="down-1"
-                            ></span>
-                          </button>
-                          <img
-                            className="img-fluid"
-                            src="../../../assets/img/products/3.png"
-                            alt=""
-                          />
-                        </div>
-                        <a
-                          className="stretched-link"
-                          href="../../../apps/e-commerce/landing/product-details.html"
-                        >
-                          <h6 className="mb-2 lh-sm line-clamp-3 product-name">
-                            Apple MacBook Pro 13 inch-M1-8/256GB-Space Gray
-                          </h6>
-                        </a>
-                        <p className="fs-9">
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="text-body-quaternary fw-semibold ms-1">
-                            (13 people rated)
-                          </span>
-                        </p>
-                      </div>
-                      <div>
-                        <p className="fs-9 text-body-highlight fw-bold mb-2">
-                          Apple care included
-                        </p>
-                        <div className="d-flex align-items-center mb-1">
-                          <p className="me-2 text-body text-decoration-line-through mb-0">
-                            $1299.00
-                          </p>
-                          <h3 className="text-body-emphasis mb-0">$1149.00</h3>
-                        </div>
-                        <p className="text-body-tertiary fw-semibold fs-9 lh-1 mb-0">
-                          2 colors
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="swiper-slide">
-                  <div className="position-relative text-decoration-none product-card h-100">
-                    <div className="d-flex flex-column justify-content-between h-100">
-                      <div>
-                        <div className="border border-1 border-translucent rounded-3 position-relative mb-3">
-                          <button
-                            className="btn btn-wish btn-wish-primary z-2 d-toggle-container"
-                            data-bs-toggle="tooltip"
-                            data-bs-placement="top"
-                            title="Add to wishlist"
-                          >
-                            <span
-                              className="fas fa-heart d-block-hover"
-                              data-fa-transform="down-1"
-                            ></span>
-                            <span
-                              className="far fa-heart d-none-hover"
-                              data-fa-transform="down-1"
-                            ></span>
-                          </button>
-                          <img
-                            className="img-fluid"
-                            src="../../../assets/img/products/5.png"
-                            alt=""
-                          />
-                        </div>
-                        <a
-                          className="stretched-link"
-                          href="../../../apps/e-commerce/landing/product-details.html"
-                        >
-                          <h6 className="mb-2 lh-sm line-clamp-3 product-name">
-                            Razer Kraken v3 x Wired 7.1 Surroung Sound Gaming
-                            headset
-                          </h6>
-                        </a>
-                        <p className="fs-9">
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="text-body-quaternary fw-semibold ms-1">
-                            (64 people rated)
-                          </span>
-                        </p>
-                      </div>
-                      <div>
-                        <h3 className="text-body-emphasis">$59.00</h3>
-                        <p className="text-body-tertiary fw-semibold fs-9 lh-1 mb-0">
-                          1 colors
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="swiper-slide">
-                  <div className="position-relative text-decoration-none product-card h-100">
-                    <div className="d-flex flex-column justify-content-between h-100">
-                      <div>
-                        <div className="border border-1 border-translucent rounded-3 position-relative mb-3">
-                          <button
-                            className="btn btn-wish btn-wish-primary z-2 d-toggle-container"
-                            data-bs-toggle="tooltip"
-                            data-bs-placement="top"
-                            title="Add to wishlist"
-                          >
-                            <span
-                              className="fas fa-heart d-block-hover"
-                              data-fa-transform="down-1"
-                            ></span>
-                            <span
-                              className="far fa-heart d-none-hover"
-                              data-fa-transform="down-1"
-                            ></span>
-                          </button>
-                          <img
-                            className="img-fluid"
-                            src="../../../assets/img/products/2.png"
-                            alt=""
-                          />
-                          <span className="badge text-bg-success fs-10 product-verified-badge">
-                            Verified<span className="fas fa-check ms-1"></span>
-                          </span>
-                        </div>
-                        <a
-                          className="stretched-link"
-                          href="../../../apps/e-commerce/landing/product-details.html"
-                        >
-                          <h6 className="mb-2 lh-sm line-clamp-3 product-name">
-                            iPhone 13 pro max-Pacific Blue, 128GB storage
-                          </h6>
-                        </a>
-                        <p className="fs-9">
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="text-body-quaternary fw-semibold ms-1">
-                            (32 people rated)
-                          </span>
-                        </p>
-                      </div>
-                      <div>
-                        <p className="fs-9 text-body-highlight fw-bold mb-2">
-                          Stock limited
-                        </p>
-                        <div className="d-flex align-items-center mb-1">
-                          <p className="me-2 text-body text-decoration-line-through mb-0">
-                            $899.99
-                          </p>
-                          <h3 className="text-body-emphasis mb-0">$855.00</h3>
-                        </div>
-                        <p className="text-body-tertiary fw-semibold fs-9 lh-1 mb-0">
-                          5 colors
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="swiper-slide">
-                  <div className="position-relative text-decoration-none product-card h-100">
-                    <div className="d-flex flex-column justify-content-between h-100">
-                      <div>
-                        <div className="border border-1 border-translucent rounded-3 position-relative mb-3">
-                          <button
-                            className="btn btn-wish btn-wish-primary z-2 d-toggle-container"
-                            data-bs-toggle="tooltip"
-                            data-bs-placement="top"
-                            title="Add to wishlist"
-                          >
-                            <span
-                              className="fas fa-heart d-block-hover"
-                              data-fa-transform="down-1"
-                            ></span>
-                            <span
-                              className="far fa-heart d-none-hover"
-                              data-fa-transform="down-1"
-                            ></span>
-                          </button>
-                          <img
-                            className="img-fluid"
-                            src="../../../assets/img/products/16.png"
-                            alt=""
-                          />
-                        </div>
-                        <a
-                          className="stretched-link"
-                          href="../../../apps/e-commerce/landing/product-details.html"
-                        >
-                          <h6 className="mb-2 lh-sm line-clamp-3 product-name">
-                            Apple AirPods Pro
-                          </h6>
-                        </a>
-                        <p className="fs-9">
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="text-body-quaternary fw-semibold ms-1">
-                            (39 people rated)
-                          </span>
-                        </p>
-                      </div>
-                      <div>
-                        <p className="fs-9 text-body-highlight fw-bold mb-1">
-                          free with iPhone 5s
-                        </p>
-                        <p className="fs-9 text-body-tertiary mb-2">
-                          Ships to Canada
-                        </p>
-                        <h3 className="text-body-emphasis">$59.00</h3>
-                        <p className="text-body-tertiary fw-semibold fs-9 lh-1 mb-0">
-                          3 colors
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="swiper-slide">
-                  <div className="position-relative text-decoration-none product-card h-100">
-                    <div className="d-flex flex-column justify-content-between h-100">
-                      <div>
-                        <div className="border border-1 border-translucent rounded-3 position-relative mb-3">
-                          <button
-                            className="btn btn-wish btn-wish-primary z-2 d-toggle-container"
-                            data-bs-toggle="tooltip"
-                            data-bs-placement="top"
-                            title="Add to wishlist"
-                          >
-                            <span
-                              className="fas fa-heart d-block-hover"
-                              data-fa-transform="down-1"
-                            ></span>
-                            <span
-                              className="far fa-heart d-none-hover"
-                              data-fa-transform="down-1"
-                            ></span>
-                          </button>
-                          <img
-                            className="img-fluid"
-                            src="../../../assets/img/products/10.png"
-                            alt=""
-                          />
-                        </div>
-                        <a
-                          className="stretched-link"
-                          href="../../../apps/e-commerce/landing/product-details.html"
-                        >
-                          <h6 className="mb-2 lh-sm line-clamp-3 product-name">
-                            Apple Magic Mouse (Wireless, Rechargable) - Silver
-                          </h6>
-                        </a>
-                        <p className="fs-9">
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="text-body-quaternary fw-semibold ms-1">
-                            (6 people rated)
-                          </span>
-                        </p>
-                      </div>
-                      <div>
-                        <p className="fs-9 text-body-highlight fw-bold mb-1">
-                          Bundle availabe
-                        </p>
-                        <p className="fs-9 text-body-tertiary mb-2">
-                          Charger not included
-                        </p>
-                        <h3 className="text-body-emphasis">$89.00</h3>
-                        <p className="text-body-tertiary fw-semibold fs-9 lh-1 mb-0">
-                          2 colors
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="swiper-slide">
-                  <div className="position-relative text-decoration-none product-card h-100">
-                    <div className="d-flex flex-column justify-content-between h-100">
-                      <div>
-                        <div className="border border-1 border-translucent rounded-3 position-relative mb-3">
-                          <button
-                            className="btn btn-wish btn-wish-primary z-2 d-toggle-container"
-                            data-bs-toggle="tooltip"
-                            data-bs-placement="top"
-                            title="Add to wishlist"
-                          >
-                            <span
-                              className="fas fa-heart d-block-hover"
-                              data-fa-transform="down-1"
-                            ></span>
-                            <span
-                              className="far fa-heart d-none-hover"
-                              data-fa-transform="down-1"
-                            ></span>
-                          </button>
-                          <img
-                            className="img-fluid"
-                            src="../../../assets/img/products/6.png"
-                            alt=""
-                          />
-                        </div>
-                        <a
-                          className="stretched-link"
-                          href="../../../apps/e-commerce/landing/product-details.html"
-                        >
-                          <h6 className="mb-2 lh-sm line-clamp-3 product-name">
-                            PlayStation 5 DualSense Wireless Controller
-                          </h6>
-                        </a>
-                        <p className="fs-9">
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="fa fa-star text-warning"></span>
-                          <span className="text-body-quaternary fw-semibold ms-1">
-                            (67 people rated)
-                          </span>
-                        </p>
-                      </div>
-                      <div>
-                        <div className="d-flex align-items-center mb-1">
-                          <p className="me-2 text-body text-decoration-line-through mb-0">
-                            $125.00
-                          </p>
-                          <h3 className="text-body-emphasis mb-0">$89.00</h3>
-                        </div>
-                        <p className="text-body-tertiary fw-semibold fs-9 lh-1 mb-0">
-                          2 colors
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div> */}
               </div>
             </div>
             <div className="swiper-nav">

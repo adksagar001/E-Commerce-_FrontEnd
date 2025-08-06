@@ -53,7 +53,7 @@ const Navbar = ({ onSearch }) => {
   const [orgDetails, SetOrgDetails] = useState([]);
   const [LoadingOrg, SetLoadingOrg] = useState(false);
   useEffect(() => {
-     apiGetWithoutAuthentication(`org/organizations/${OrgSubDomain}`,orgDetails,SetLoadingOrg);
+     apiGetWithoutAuthentication(`org/organizations/${OrgSubDomain}`,SetOrgDetails,SetLoadingOrg);
   }, [OrgSubDomain]);
   //----------------fetchg the categories----------
   const [categories, setCategories] = useState([]);
@@ -61,7 +61,6 @@ const Navbar = ({ onSearch }) => {
   useEffect(() => {
     ApiCallWithoutDataNoAsync("categories/cats", setCategories, setCatLoading);
   }, []);
-
   //--------------------sign out----------
   const navigate = useNavigate();
 

@@ -78,7 +78,7 @@ useEffect(() => {
         <div className="container-small">
           <div className="scrollbar">
             <div className="d-flex justify-content-between">
-              {loading||catLoading?(showLoading()||null):
+              {loading||catLoading?<></>:
                 categories && categories.length > 0 ?
                 categories.map((CategoryName, id) => (
                 <a className="icon-nav-item" href="#!" key={CategoryName.id}>
