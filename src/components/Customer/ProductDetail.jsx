@@ -4,37 +4,70 @@ import { apiGetWithoutAuthentication } from "../../services/api";
 
 function ProductDetail() {
   const { prodId } = useParams();
-  const [productDetail, setProductDetail] = useState([]);
+  const [productDetail, setProductDetail] = useState(null);
+  const [similarProducts, setSimilarProducts] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Fetch product details
-  async function FetchProductDetails() {
+  // 1️⃣ Fetch product detail
+  const FetchProductDetails = async () => {
     try {
       setLoading(true);
       await apiGetWithoutAuthentication(
         `products/getAProduct/public?orgId=1&prodId=${prodId}`,
         (response) => {
-            setProductDetail(response[0]);         
+          if (response && response.length > 0) {
+            setProductDetail(response[0]);
+          } else {
+            setProductDetail(null);
+          }
         },
         setLoading
       );
     } catch (error) {
       console.error("Error fetching product detail:", error);
-      setProductDetail([]);
+      setProductDetail(null);
     } finally {
       setLoading(false);
     }
-  }
+  };
 
+  // 2️⃣ Fetch similar products once categoryId is available
+  const getOtherSimilarProducts = async (catId) => {
+    
+    if (!catId) return;
+    try {
+      setLoading(true);
+      await apiGetWithoutAuthentication(
+        `products/getSimilarProducts/public?orgId=1&catId=${catId}`,
+        setSimilarProducts,
+        setLoading
+      );
+    } catch (error) {
+      console.error("Error fetching similar products:", error);
+      setSimilarProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 🔁 Fetch product detail when product ID changes
   useEffect(() => {
     FetchProductDetails();
   }, [prodId]);
 
+  // 🔁 Fetch similar products after product detail is loaded
+  useEffect(() => {
+    
+    if (productDetail && productDetail.categoryyid) {
+      getOtherSimilarProducts(productDetail.categoryyid);
+    }
+  }, [productDetail]);
+
+
+  
   if (loading) return <div>Loading...</div>;
 
-  if (!productDetail || productDetail.length === 0) {
-    return <div>No product found.</div>;
-  }
+  if (!productDetail) return <div>No product found.</div>;
 
   return (
     <>
@@ -280,7 +313,74 @@ function ProductDetail() {
               data-swiper='{"slidesPerView":1,"spaceBetween":16,"breakpoints":{"450":{"slidesPerView":2,"spaceBetween":16},"768":{"slidesPerView":3,"spaceBetween":16},"992":{"slidesPerView":4,"spaceBetween":16},"1200":{"slidesPerView":5,"spaceBetween":16},"1540":{"slidesPerView":6,"spaceBetween":16}}}'
             >
               <div className="swiper-wrapper">
-                <div className="swiper-slide">
+                {similarProducts.map((product) => (
+                  <div className="swiper-slide">
+                    <div className="position-relative text-decoration-none product-card h-100">
+                      <div className="d-flex flex-column justify-content-between h-100">
+                        <div>
+                          <div className="border border-1 border-translucent rounded-3 position-relative mb-3">
+                            <button
+                              className="btn btn-wish btn-wish-primary z-2 d-toggle-container"
+                              data-bs-toggle="tooltip"
+                              data-bs-placement="top"
+                              title="Add to wishlist"
+                            >
+                              <span
+                                className="fas fa-heart d-block-hover"
+                                data-fa-transform="down-1"
+                              ></span>
+                              <span
+                                className="far fa-heart d-none-hover"
+                                data-fa-transform="down-1"
+                              ></span>
+                            </button>
+                            <img
+                              className="img-fluid"
+                              src="../../../assets/img/products/3.png"
+                              alt=""
+                            />
+                          </div>
+                          <a
+                            className="stretched-link"
+                            href="../../../apps/e-commerce/landing/product-details.html"
+                          >
+                            <h6 className="mb-2 lh-sm line-clamp-3 product-name">
+                                {product.productName}
+                            </h6>
+                          </a>
+                          <p className="fs-9">
+                            <span className="fa fa-star text-warning"></span>
+                            <span className="fa fa-star text-warning"></span>
+                            <span className="fa fa-star text-warning"></span>
+                            <span className="fa fa-star text-warning"></span>
+                            <span className="fa fa-star text-warning"></span>
+                            <span className="text-body-quaternary fw-semibold ms-1">
+                              (13 people rated)
+                            </span>
+                          </p>
+                        </div>
+                        <div>
+                          <p className="fs-9 text-body-highlight fw-bold mb-2">
+                            Apple care included
+                          </p>
+                          <div className="d-flex align-items-center mb-1">
+                            <p className="me-2 text-body text-decoration-line-through mb-0">
+                              $1299.00
+                            </p>
+                            <h3 className="text-body-emphasis mb-0">
+                              $1149.00
+                            </h3>
+                          </div>
+                          <p className="text-body-tertiary fw-semibold fs-9 lh-1 mb-0">
+                            2 colors
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* <div className="swiper-slide">
                   <div className="position-relative text-decoration-none product-card h-100">
                     <div className="d-flex flex-column justify-content-between h-100">
                       <div>
@@ -702,7 +802,7 @@ function ProductDetail() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
             <div className="swiper-nav">
