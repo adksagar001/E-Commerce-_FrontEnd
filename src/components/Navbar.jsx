@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import feather from "feather-icons";
-import { ApiCallWithoutDataNoAsync } from "../services/api";
+import {
+  ApiCallWithoutDataNoAsync,
+  apiGetWithoutAuthentication,
+  apiGet,
+} from "../services/api";
 
   const Token = localStorage.getItem("orgToken");
   const Name = localStorage.getItem("orgName");
@@ -12,8 +16,15 @@ const Navbar = ({ onSearch }) => {
   useEffect(() => {
     feather.replace();
   });
+//--------------------check if logged in user---------
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  const navItems =
+  useEffect(() => {
+    const token = localStorage.getItem("orgToken");
+    setIsLoggedIn(token && token.trim() !== "");
+  }, []);
+  //---------------------------------------------------------
+  const navItems =isLoggedIn?[]:
      [
           { name: "Home", path: "/" },
           { name: "Login", path: "/login" },
@@ -34,12 +45,31 @@ const Navbar = ({ onSearch }) => {
       onSearch(term);
     }
   };
+  
+  //-----------------fetch the organization details----------
+  const OrgSubDomain = window.location.hostname==="localhost"
+    ? 1
+    : 0; //--------------later change this from url parameter in production---------
+  const [orgDetails, SetOrgDetails] = useState([]);
+  const [LoadingOrg, SetLoadingOrg] = useState(false);
+  useEffect(() => {
+     apiGetWithoutAuthentication(`org/organizations/${OrgSubDomain}`,orgDetails,SetLoadingOrg);
+  }, [OrgSubDomain]);
   //----------------fetchg the categories----------
   const [categories, setCategories] = useState([]);
   const [Loading, setCatLoading] = useState(true);
   useEffect(() => {
     ApiCallWithoutDataNoAsync("categories/cats", setCategories, setCatLoading);
   }, []);
+
+  //--------------------sign out----------
+  const navigate = useNavigate();
+
+  const handleSignOut = (e) => {
+    e.preventDefault(); 
+    localStorage.clear();
+    navigate("/login");
+  };
   return (
     <>
       <main className="main" id="top">
@@ -52,7 +82,9 @@ const Navbar = ({ onSearch }) => {
                     <a className="text-decoration-none" href="#">
                       <div className="d-flex align-items-center">
                         <img src="/logos/favicon.png" alt="logo" width="27" />
-                        <h5 className="logo-text ms-2">BharatPokhari Stores</h5>
+                        <h5 className="logo-text ms-2" key={orgDetails.Id}>
+                          {orgDetails.Name}
+                        </h5>
                       </div>
                     </a>
                   </div>
@@ -358,16 +390,18 @@ const Navbar = ({ onSearch }) => {
                               <div className="px-3">
                                 {" "}
                                 <a
-                                  className="btn btn-phoenix-secondary d-flex flex-center w-100"
-                                  href="#!"
+                                  href="/login"
+                                  onClick={handleSignOut}
+                                  className="d-flex align-items-center"
                                 >
-                                  {" "}
-                                  <span className="me-2" data-feather="log-out">
-                                    {" "}
-                                  </span>
+                                  <span
+                                    className="me-2"
+                                    data-feather="log-out"
+                                  ></span>
                                   Sign out
                                 </a>
                               </div>
+
                               <div className="my-2 text-center fw-bold fs-10 text-body-quaternary">
                                 <a
                                   className="text-body-quaternary me-1"

@@ -1,10 +1,10 @@
 import Swal from "sweetalert2";
 
-const BASE_URL = "https://e-commerce-backend-uwc4.onrender.com/";
- //const BASE_URL = "http://localhost:5000/";
+//const BASE_URL = "https://e-commerce-backend-uwc4.onrender.com/";
+ const BASE_URL = "http://localhost:5000/";
 
 //-----------------Reusable functions--------
-function showLoading() {
+ function showLoading() {
   Swal.fire({
     title: "Please wait...",
     allowOutsideClick: false,
@@ -96,6 +96,32 @@ export const apiGet = async (endpoint, setData, setLoading = () => {}) => {
     Swal.close();
   }
 };
+// ✅ GET without Auth
+export const apiGetWithoutAuthentication = async (endpoint, setData, setLoading = () => { }) => {
+  
+  setLoading(true);
+  showLoading();
+
+  try {
+
+    const res = await fetch(`${BASE_URL}${endpoint}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || `Error ${res.status}`);
+
+    setData(json.data);
+  } catch (error) {
+    handleError(error);
+  } finally {
+    setLoading(false);
+    Swal.close();
+  }
+};
 // ✅ GET with params/ID and JWT in url
 export const apiGetWithParams = async (endpoint, params = {}, setData, setLoading = () => { }) => {
   
@@ -131,14 +157,7 @@ export const apiGetWithParams = async (endpoint, params = {}, setData, setLoadin
 
 // ✅ POST with Auth
 export const ApiPostWithLocalStorage = async (endpoint, payload, onSuccess) => {
-  Swal.fire({
-    title: "Please Wait...",
-    allowOutsideClick: false,
-    didOpen: () => {
-      Swal.showLoading();
-    },
-  });
-
+  showLoading();
   try {
     const token = localStorage.getItem("orgToken");
     if (!token) throw new Error("No JWT token found in local storage.");
@@ -166,14 +185,7 @@ export const ApiPostWithLocalStorage = async (endpoint, payload, onSuccess) => {
 };
 // ✅ POST without Auth
 export const ApiPostWithoutAuth = async (endpoint, payload, onSuccess) => {
-  Swal.fire({
-    title: "Please Wait...",
-    allowOutsideClick: false,
-    didOpen: () => {
-      Swal.showLoading();
-    },
-  });
-
+  showLoading();
   try {
     const response = await fetch(`${BASE_URL}${endpoint}`, {
       method: "POST",

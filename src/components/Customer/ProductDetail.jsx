@@ -1,21 +1,26 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { apiGet } from "../../services/api";
+import { apiGetWithoutAuthentication } from "../../services/api";
 
 function ProductDetail() {
   const { prodId } = useParams();
-  const [productDetail, setProductDetail] = useState(null);
+  const [productDetail, setProductDetail] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // Fetch product details
   async function FetchProductDetails() {
     try {
       setLoading(true);
-
-      const response = await apiGet(`products/getProductwithId/2`,setProductDetail);
-      
+      await apiGetWithoutAuthentication(
+        `products/getAProduct/public?orgId=1&prodId=${prodId}`,
+        (response) => {
+            setProductDetail(response[0]);         
+        },
+        setLoading
+      );
     } catch (error) {
       console.error("Error fetching product detail:", error);
-      setProductDetail(null);
+      setProductDetail([]);
     } finally {
       setLoading(false);
     }
@@ -25,11 +30,9 @@ function ProductDetail() {
     FetchProductDetails();
   }, [prodId]);
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  if (loading) return <div>Loading...</div>;
 
-  if (!productDetail) {
+  if (!productDetail || productDetail.length === 0) {
     return <div>No product found.</div>;
   }
 
@@ -67,7 +70,11 @@ function ProductDetail() {
                       data-thumb-target="swiper-products-thumb"
                       data-products-swiper='{"slidesPerView":1,"spaceBetween":16,"thumbsEl":".swiper-products-thumb"}'
                     ></div>
-                    <img src={productDetail.Image} width="380" alt="Product Image"/>
+                    <img
+                      src={productDetail.Image}
+                      width="380"
+                      alt="Product Image"
+                    />
                   </div>
                 </div>
               </div>
@@ -96,7 +103,7 @@ function ProductDetail() {
                     </p>
                   </div>
                   <h3 className="mb-3 lh-sm">{productDetail.ProductName}</h3>
-                  <h4>{ productDetail.CompanyName}</h4>
+                  <h4>{productDetail.CompanyName}</h4>
                   <div className="d-flex flex-wrap align-items-start mb-3">
                     <span className="badge text-bg-success fs-9 rounded-pill me-2 fw-semibold">
                       #1 Best seller
@@ -108,13 +115,15 @@ function ProductDetail() {
                   <div className="d-flex flex-wrap align-items-center">
                     <h1 className="me-3">Nrs {productDetail.DiscountedRate}</h1>
                     <p className="text-body-quaternary text-decoration-line-through fs-6 mb-0 me-3">
-                     Nrs {productDetail.Price}
+                      Nrs {productDetail.Price}
                     </p>
                     <p className="text-warning fw-bolder fs-6 mb-0">
                       {productDetail.DiscountRate}% off
                     </p>
                   </div>
-                  <p className="text-success fw-semibold fs-7 mb-2">{productDetail.Quantity} items In stock</p>
+                  <p className="text-success fw-semibold fs-7 mb-2">
+                    {productDetail.Quantity} items In stock
+                  </p>
                   <p className="mb-2 text-body-secondary">
                     {productDetail.Description}
                   </p>
@@ -214,7 +223,6 @@ function ProductDetail() {
                     </div>
                   </div>
                   <div className="row g-3 g-sm-5 align-items-end">
-                   
                     <div className="col-12 col-sm">
                       <p className="fw-semibold mb-2 text-body">Quantity : </p>
                       <div className="d-flex justify-content-between align-items-end">
@@ -232,8 +240,8 @@ function ProductDetail() {
                             className="form-control text-center input-spin-none bg-transparent border-0 outline-none"
                             style={{ width: "50px" }}
                             type="number"
-                            min="1" max={productDetail.Quantity}
-                            value="1"
+                            min="1"
+                            max={productDetail.Quantity}
                           />
                           <button
                             className="btn btn-phoenix-primary px-3"
