@@ -47,9 +47,9 @@ const Navbar = ({ onSearch }) => {
   };
   
   //-----------------fetch the organization details----------
-  const OrgSubDomain = window.location.hostname==="localhost"
+  const OrgSubDomain = window.location.hostname==="localhost"||"meroyatra"
     ? 1
-    : 0; //--------------later change this from url parameter in production---------
+    : 1; //--------------later change this from url parameter in production---------
   const [orgDetails, SetOrgDetails] = useState([]);
   const [LoadingOrg, SetLoadingOrg] = useState(false);
   useEffect(() => {
