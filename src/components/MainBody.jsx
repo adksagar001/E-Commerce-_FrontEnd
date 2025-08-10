@@ -28,7 +28,7 @@ function Mainbody() {
 
   // 1️⃣ Detect login only once
   useEffect(() => {
-    const token = localStorage.getItem("orgToken");
+    const token = sessionStorage.getItem("orgToken");
     setIsLoggedIn(token && token.trim() !== "" ? true : false);
   }, []);
 
@@ -225,7 +225,7 @@ useEffect(() => {
                   <div className="swiper-wrapper">
                     {products && products.length > 0 ? (
                       products.map((product) => (
-                        <div className="swiper-slide " key={product.id}>
+                        <div className="swiper-slide " key={product.id} style={{border:"1px solid red"}}>
                           <div className="position-relative text-decoration-none product-card h-100">
                             <div className="d-flex flex-column justify-content-between h-100">
                               <div>

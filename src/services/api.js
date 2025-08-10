@@ -40,7 +40,7 @@ export const ApiCallWithLocalStorageWithoutData = async (endpoint, setData) => {
   showLoading();
   
   try {
-    const token = localStorage.getItem("orgToken");
+    const token = sessionStorage.getItem("orgToken");
     if (!token) throw new Error("No JWT token found in local storage.");
 
     const response = await fetch(`${BASE_URL}${endpoint}`, {
@@ -74,7 +74,7 @@ export const apiGet = async (endpoint, setData, setLoading = () => {}) => {
   showLoading();
 
   try {
-    const token = localStorage.getItem("orgToken");
+    const token = sessionStorage.getItem("orgToken");
     if (!token) throw new Error("No JWT token found in local storage");
 
     const res = await fetch(`${BASE_URL}${endpoint}`, {
@@ -129,7 +129,7 @@ export const apiGetWithParams = async (endpoint, params = {}, setData, setLoadin
   showLoading();
 
   try {
-    const token = localStorage.getItem("orgToken");
+    const token = sessionStorage.getItem("orgToken");
     if (!token) throw new Error("No JWT token found in local storage");
 
     const queryString = new URLSearchParams(params).toString();
@@ -159,7 +159,7 @@ export const apiGetWithParams = async (endpoint, params = {}, setData, setLoadin
 export const ApiPostWithLocalStorage = async (endpoint, payload, onSuccess) => {
   showLoading();
   try {
-    const token = localStorage.getItem("orgToken");
+    const token = sessionStorage.getItem("orgToken");
     if (!token) throw new Error("No JWT token found in local storage.");
 
     const response = await fetch(`${BASE_URL}${endpoint}`, {
@@ -220,7 +220,7 @@ export const apiPut = async (
   showLoading();
 
   try {
-    const token = localStorage.getItem("orgToken");
+    const token = sessionStorage.getItem("orgToken");
     if (!token) throw new Error("No JWT token found in local storage");
 
     const res = await fetch(`${BASE_URL}${endpoint}`, {
@@ -255,7 +255,7 @@ export const apiDelete = async (
   showLoading();
 
   try {
-    const token = localStorage.getItem("orgToken");
+    const token = sessionStorage.getItem("orgToken");
     if (!token) throw new Error("No JWT token found in local storage");
 
     const res = await fetch(`${BASE_URL}${endpoint}`, {

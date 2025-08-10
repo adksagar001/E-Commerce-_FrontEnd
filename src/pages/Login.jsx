@@ -4,6 +4,7 @@ import Swal from "sweetalert2";
 import { ApiPostWithoutAuth } from "../services/api";
 
 const LoginToSystem = async (email, password, setLoading) => {
+  
   return new Promise((resolve, reject) => {
     ApiPostWithoutAuth(
       "auth/login",
@@ -17,12 +18,12 @@ const LoginToSystem = async (email, password, setLoading) => {
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  //const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError("");
+    //setError("");
 
     try {
       const response = await LoginToSystem(email, password, setIsLoading);
@@ -31,11 +32,11 @@ const Login = () => {
         throw new Error("Invalid response from server");
       }
 
-      localStorage.setItem("orgToken", response.token);
-      localStorage.setItem("orgName", response.user.name);
+      sessionStorage.setItem("orgToken", response.token);
+      sessionStorage.setItem("orgName", response.user.name);
       window.location.href = `/${response.Page}`;
     } catch (err) {
-      setError(err.message || "Invalid email or password");
+     // setError(err.message || "Invalid email or password");
     } finally {
       setIsLoading(false);
     }
@@ -66,9 +67,9 @@ const Login = () => {
                 <p className="text-body-tertiary">Access our Products</p>
               </div>
 
-              {error && (
+              {/* {error && (
                 <div className="alert alert-danger py-2 px-3">{error}</div>
-              )}
+              )} */}
 
               <form onSubmit={handleLogin}>
                 <div className="mb-3 text-start">

@@ -7,8 +7,8 @@ import {
   apiGet,
 } from "../services/api";
 
-  const Token = localStorage.getItem("orgToken");
-  const Name = localStorage.getItem("orgName");
+  const Token = sessionStorage.getItem("orgToken");
+  const Name = sessionStorage.getItem("orgName");
 
 const Navbar = ({ onSearch }) => {
   const location = useLocation();
@@ -16,28 +16,14 @@ const Navbar = ({ onSearch }) => {
   useEffect(() => {
     feather.replace();
   });
-//--------------------check if logged in user---------
+  //--------------------check if logged in user---------
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("orgToken");
+    const token = sessionStorage.getItem("orgToken");
     setIsLoggedIn(token && token.trim() !== "");
   }, []);
-  //---------------------------------------------------------
-  const navItems =isLoggedIn?[]:
-     [
-          { name: "Home", path: "/" },
-          { name: "Login", path: "/login" },
-          { name: "SignUp", path: "/register" },
-        ]
-    
-  if (
-    location.pathname === "/login" ||
-    location.pathname === "/register" ||
-    location.pathname === "/forgot-password"
-  ) {
-    return null;
-  }
+
   const handleSearch = (e) => {
     const term = e.target.value;
     setSearchTerm(term);
@@ -45,15 +31,18 @@ const Navbar = ({ onSearch }) => {
       onSearch(term);
     }
   };
-  
+
   //-----------------fetch the organization details----------
-  const OrgSubDomain = window.location.hostname==="localhost"||"meroyatra"
-    ? 1
-    : 1; //--------------later change this from url parameter in production---------
+  const OrgSubDomain =
+    window.location.hostname === "localhost" || "meroyatra" ? 1 : 1; //--------------later change this from url parameter in production---------
   const [orgDetails, SetOrgDetails] = useState([]);
   const [LoadingOrg, SetLoadingOrg] = useState(false);
   useEffect(() => {
-     apiGetWithoutAuthentication(`org/organizations/${OrgSubDomain}`,SetOrgDetails,SetLoadingOrg);
+    apiGetWithoutAuthentication(
+      `org/organizations/${OrgSubDomain}`,
+      SetOrgDetails,
+      SetLoadingOrg
+    );
   }, [OrgSubDomain]);
   //----------------fetchg the categories----------
   const [categories, setCategories] = useState([]);
@@ -65,10 +54,27 @@ const Navbar = ({ onSearch }) => {
   const navigate = useNavigate();
 
   const handleSignOut = (e) => {
-    e.preventDefault(); 
-    localStorage.clear();
+    e.preventDefault();
+    sessionStorage.clear();
     navigate("/login");
   };
+
+  //---------------------------------------------------------
+  const navItems = isLoggedIn
+    ? []
+    : [
+        { name: "Home", path: "/" },
+        { name: "Login", path: "/login" },
+        { name: "SignUp", path: "/register" },
+      ];
+
+  if (
+    location.pathname === "/login" ||
+    location.pathname === "/register" ||
+    location.pathname === "/forgot-password"
+  ) {
+    return null;
+  }
   return (
     <>
       <main className="main" id="top">
@@ -484,13 +490,15 @@ const Navbar = ({ onSearch }) => {
                           </div>
                           <div className="ms-n2">
                             {category.items.split(",").map((item, i) => (
-                              <a
+                              <Link
                                 key={i}
+                                to={`/productDetails/${encodeURIComponent(
+                                  item.trim()
+                                )}`}
                                 className="text-body-emphasis d-block mb-1 text-decoration-none bg-body-highlight-hover px-2 py-1 rounded-2"
-                                href="#!"
                               >
                                 {item}
-                              </a>
+                              </Link>
                             ))}
                           </div>
                         </div>
