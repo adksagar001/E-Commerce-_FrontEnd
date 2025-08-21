@@ -10,7 +10,7 @@ import Swal from "sweetalert2";
 function Mainbody() {
  function showLoading() {
   Swal.fire({
-    title: "Please wait...",
+    title: "Please wait Categories are being loaded...",
     allowOutsideClick: false,
     didOpen: () => {
       Swal.showLoading();
@@ -108,7 +108,7 @@ useEffect(() => {
                   className="bg-holder z-n1 product-bg"
                   style={{
                     backgroundImage:
-                      "url('../../../assets/img/e-commerce/whooping_banner_product.png')",
+                      "url('../../../assets/img/e-commerce/650_ml.png')",
                     backgroundPosition: "bottom right",
                   }}
                 ></div>
@@ -125,10 +125,10 @@ useEffect(() => {
 
                   <div className="banner-text" data-bs-theme="light">
                     <h2 className="text-warning-light fw-bolder fs-lg-3 fs-xxl-2">
-                      Whooping <span className="gradient-text">60% </span>Off
+                      Buy One <span className="gradient-text">Arna 6.4 </span> 650 ml
                     </h2>
                     <h3 className="fw-bolder fs-lg-5 fs-xxl-3 text-white">
-                      on everyday items
+                      Get Arna 250 ml can for free
                     </h3>
                   </div>
                 </div>
@@ -179,10 +179,10 @@ useEffect(() => {
                   <div className="col-8">
                     <div className="banner-text">
                       <h2 className="text-white fw-bolder fs-sm-4 mb-5">
-                        MI 11 Pro<span></span>
+                        Khajurico<span></span>
                         <span className="fs-7 fs-sm-6">
                           {" "}
-                          Best in the market
+                          Best seller in the market
                         </span>
                       </h2>
                       <a
@@ -313,7 +313,7 @@ useEffect(() => {
                 <div
                   className="bg-holder"
                   style={{
-                    backgroundImage: "url('/assets/img/e-commerce/4.png')",
+                    backgroundImage: "url('/assets/img/e-commerce/arna.png')",
                   }}
                 ></div>
               </div>
